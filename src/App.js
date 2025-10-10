@@ -49,6 +49,7 @@ const FinTrack = () => {
   });
 
   const [newCategory, setNewCategory] = useState({ name: '', type: 'divida' });
+  const [expandedGroups, setExpandedGroups] = useState({});
 
   const defaultCategories = {
     entrada: ['Salário', 'Freelance', 'Investimentos', 'Outros'],
@@ -193,20 +194,24 @@ const FinTrack = () => {
 
     if (formData.installments > 1) {
       const installmentValue = parseFloat(formData.value) / parseInt(formData.installments);
-      const baseDate = new Date(formData.date);
       const newTransactions = [];
 
       for (let i = 0; i < formData.installments; i++) {
-        const installmentDate = new Date(baseDate);
-        installmentDate.setMonth(baseDate.getMonth() + i);
+        const installmentDate = new Date(formData.date);
+        installmentDate.setMonth(installmentDate.getMonth() + i);
+
+        const targetDay = new Date(formData.date).getDate();
+        const lastDayOfMonth = new Date(installmentDate.getFullYear(), installmentDate.getMonth() + 1, 0).getDate();
+        installmentDate.setDate(Math.min(targetDay, lastDayOfMonth));
+
         newTransactions.push({
-          id: Date.now() + i,
+          id: Date.now() + i + Math.random(),
           type: transactionType,
           value: installmentValue,
           date: installmentDate.toISOString().split('T')[0],
           category: formData.category,
           description: `${formData.description} (${i + 1}/${formData.installments})`,
-          status: formData.status,
+          status: 'pendente',
           recurrent: formData.recurrent
         });
       }
@@ -260,6 +265,43 @@ const FinTrack = () => {
     }
   };
 
+  const toggleGroupExpansion = (groupName) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
+
+  const groupTransactions = (transactions) => {
+    const groups = {};
+
+    transactions.forEach(t => {
+      // Extrair nome base (sem número de parcela)
+      const baseName = t.description.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
+      const hasInstallments = /\(\d+\/\d+\)/.test(t.description);
+
+      if (hasInstallments) {
+        if (!groups[baseName]) {
+          groups[baseName] = {
+            name: baseName,
+            transactions: [],
+            isGroup: true
+          };
+        }
+        groups[baseName].transactions.push(t);
+      } else {
+        // Transações sem parcelas ficam sozinhas
+        groups[`${baseName}-${t.id}`] = {
+          name: baseName,
+          transactions: [t],
+          isGroup: false
+        };
+      }
+    });
+
+    return Object.values(groups);
+  };
+
   const exportToCSV = () => {
     const headers = ['Tipo,Valor,Data,Categoria,Descrição,Status'];
     const rows = transactions.map(t => `${t.type},${t.value},${t.date},${t.category},${t.description},${t.status}`);
@@ -274,8 +316,6 @@ const FinTrack = () => {
 
   const exportToPDF = () => {
     const totals = calculateTotals();
-
-    // Criar HTML para impressão
     const printWindow = window.open('', '_blank');
     const html = `
       <!DOCTYPE html>
@@ -283,105 +323,33 @@ const FinTrack = () => {
       <head>
         <title>FinTrack - Relatório</title>
         <style>
-          body {
-            font-family: Arial, sans-serif;
-            padding: 40px;
-            color: #333;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 3px solid #10b981;
-            padding-bottom: 20px;
-          }
-          .header h1 {
-            color: #10b981;
-            margin: 0;
-          }
-          .info {
-            margin: 20px 0;
-            font-size: 14px;
-          }
-          .summary {
-            background: #f3f4f6;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-          }
-          .summary-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0;
-            font-size: 16px;
-          }
-          .summary-item strong {
-            color: #1f2937;
-          }
-          .total {
-            font-size: 18px;
-            font-weight: bold;
-            border-top: 2px solid #10b981;
-            padding-top: 10px;
-            margin-top: 10px;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 30px;
-          }
-          th {
-            background: #3b82f6;
-            color: white;
-            padding: 12px;
-            text-align: left;
-            font-weight: bold;
-          }
-          td {
-            padding: 10px;
-            border-bottom: 1px solid #e5e7eb;
-          }
-          tr:nth-child(even) {
-            background: #f9fafb;
-          }
-          .entrada {
-            color: #10b981;
-            font-weight: bold;
-          }
-          .divida {
-            color: #ef4444;
-            font-weight: bold;
-          }
-          .status-paga {
-            background: #10b981;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-          }
-          .status-pendente {
-            background: #f59e0b;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-          }
-          @media print {
-            body {
-              padding: 20px;
-            }
-          }
+          body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #10b981; padding-bottom: 20px; }
+          .header h1 { color: #10b981; margin: 0; }
+          .info { margin: 20px 0; font-size: 14px; }
+          .summary { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .summary-item { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
+          .summary-item strong { color: #1f2937; }
+          .total { font-size: 18px; font-weight: bold; border-top: 2px solid #10b981; padding-top: 10px; margin-top: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+          th { background: #3b82f6; color: white; padding: 12px; text-align: left; font-weight: bold; }
+          td { padding: 10px; border-bottom: 1px solid #e5e7eb; }
+          tr:nth-child(even) { background: #f9fafb; }
+          .entrada { color: #10b981; font-weight: bold; }
+          .divida { color: #ef4444; font-weight: bold; }
+          .status-paga { background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+          .status-pendente { background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+          @media print { body { padding: 20px; } }
         </style>
       </head>
       <body>
         <div class="header">
           <h1>💰 FinTrack - Relatório Financeiro</h1>
         </div>
-        
         <div class="info">
           <p><strong>Usuário:</strong> ${currentUser}</p>
           <p><strong>Data do Relatório:</strong> ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
         </div>
-        
         <div class="summary">
           <h2>📊 Resumo Financeiro</h2>
           <div class="summary-item">
@@ -401,7 +369,6 @@ const FinTrack = () => {
             <span style="color: ${totals.saldo >= 0 ? '#10b981' : '#ef4444'};">${formatCurrency(totals.saldo)}</span>
           </div>
         </div>
-        
         <h2>📝 Todas as Transações</h2>
         <table>
           <thead>
@@ -427,28 +394,18 @@ const FinTrack = () => {
             `).join('')}
           </tbody>
         </table>
-        
         <script>
-          window.onload = function() {
-            window.print();
-          }
+          window.onload = function() { window.print(); }
         </script>
       </body>
       </html>
     `;
-
     printWindow.document.write(html);
     printWindow.document.close();
   };
 
   const exportBackup = () => {
-    const backup = {
-      transactions,
-      monthlyGoal,
-      customCategories,
-      currency,
-      exportDate: new Date().toISOString()
-    };
+    const backup = { transactions, monthlyGoal, customCategories, currency, exportDate: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -460,7 +417,6 @@ const FinTrack = () => {
   const importBackup = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -488,14 +444,13 @@ const FinTrack = () => {
   const expensesByCategory = getExpensesByCategory();
   const monthlyEvolution = getMonthlyEvolution();
   const upcomingBills = getUpcomingBills();
-  const savingsProgress = ((totals.saldo / monthlyGoal) * 100).toFixed(1);
+  const savingsProgress = ((filteredTotals.saldo / monthlyGoal) * 100).toFixed(1);
   const bgClass = darkMode ? 'bg-gray-900' : 'bg-gray-50';
   const cardClass = darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900';
   const textClass = darkMode ? 'text-gray-300' : 'text-gray-600';
 
   return (
     <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
-      {/* Header */}
       <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-md p-4 sticky top-0 z-10`}>
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -535,24 +490,16 @@ const FinTrack = () => {
       </div>
 
       <div className="max-w-6xl mx-auto p-4 pb-24">
-        {/* Dashboard */}
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
-            {/* Filtro de Mês */}
             <div className={`${cardClass} p-4 rounded-xl shadow-lg flex items-center justify-between`}>
               <div className="flex items-center gap-2">
                 <Calendar size={20} className="text-blue-500" />
                 <span className="font-semibold">Filtrar por mês:</span>
               </div>
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className={`p-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-              />
+              <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`p-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} />
             </div>
 
-            {/* Cards de Resumo */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
                 <div className="flex justify-between items-start mb-2">
@@ -592,7 +539,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Meta de Economia */}
             <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
               <div className="flex items-center gap-2 mb-4">
                 <Target className="text-purple-500" size={24} />
@@ -600,17 +546,16 @@ const FinTrack = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Progresso: {formatCurrency(totals.saldo)}</span>
+                  <span>Progresso: {formatCurrency(filteredTotals.saldo)}</span>
                   <span>Meta: {formatCurrency(monthlyGoal)}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className={`h-3 rounded-full ${savingsProgress >= 100 ? 'bg-green-500' : 'bg-purple-500'}`} style={{ width: `${Math.min(savingsProgress, 100)}%` }}></div>
+                  <div className={`h-3 rounded-full ${savingsProgress >= 100 ? 'bg-green-500' : 'bg-purple-500'}`} style={{ width: `${Math.min(Math.abs(savingsProgress), 100)}%` }}></div>
                 </div>
                 <p className="text-sm text-center">{savingsProgress}% da meta alcançada</p>
               </div>
             </div>
 
-            {/* Gráficos */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
                 <h2 className="text-xl font-bold mb-4">Gastos por Categoria</h2>
@@ -643,7 +588,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Evolução Mensal */}
             <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
               <h2 className="text-xl font-bold mb-4">Evolução Mensal (Últimos 6 Meses)</h2>
               <ResponsiveContainer width="100%" height={300}>
@@ -662,7 +606,6 @@ const FinTrack = () => {
           </div>
         )}
 
-        {/* Relatórios */}
         {activeTab === 'relatorios' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center flex-wrap gap-2">
@@ -691,38 +634,174 @@ const FinTrack = () => {
             <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
               <h3 className="text-xl font-bold mb-4">Todas as Transações</h3>
               <div className="space-y-2">
-                {transactions.map(t => (
-                  <div key={t.id} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                    <div className="flex-1">
-                      <p className="font-semibold">{t.description}</p>
-                      <p className={`text-sm ${textClass}`}>{t.category} • {format(parseISO(t.date), 'dd/MM/yyyy')}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <p className={`font-bold ${t.type === 'entrada' ? 'text-green-500' : 'text-red-500'}`}>{t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}</p>
-                        {t.type === 'divida' && (
-                          <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded ${t.status === 'paga' ? 'bg-green-500 text-white' : 'bg-orange-500 text-white'}`}>
-                            {t.status === 'paga' ? 'Paga' : 'Pendente'}
-                          </button>
-                        )}
-                      </div>
-                      <button onClick={() => deleteTransaction(t.id)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                {groupTransactions(transactions.sort((a, b) => new Date(a.date) - new Date(b.date)))
+                  .map((group) => {
+                    if (!group.isGroup) {
+                      // Transação única (sem parcelas)
+                      const t = group.transactions[0];
+                      const today = new Date();
+                      const dueDate = new Date(t.date);
+                      const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+
+                      return (
+                        <div key={t.id} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                          <div className="flex-1">
+                            <p className="font-semibold">{t.description}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className={`text-sm ${textClass}`}>{t.category}</p>
+                              <span className={`text-xs ${textClass}`}>•</span>
+                              <p className={`text-sm ${textClass}`}>{format(parseISO(t.date), 'dd/MM/yyyy')}</p>
+                              {t.type === 'divida' && t.status === 'pendente' && daysUntil >= 0 && daysUntil <= 7 && (
+                                <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded">
+                                  Vence em {daysUntil} {daysUntil === 1 ? 'dia' : 'dias'}
+                                </span>
+                              )}
+                              {t.type === 'divida' && t.status === 'pendente' && daysUntil < 0 && (
+                                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded animate-pulse">
+                                  ATRASADO {Math.abs(daysUntil)} {Math.abs(daysUntil) === 1 ? 'dia' : 'dias'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <p className={`font-bold ${t.type === 'entrada' ? 'text-green-500' : 'text-red-500'}`}>
+                                {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}
+                              </p>
+                              {t.type === 'divida' && (
+                                <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded transition-colors ${t.status === 'paga' ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
+                                  {t.status === 'paga' ? '✓ Paga' : '⏱ Pendente'}
+                                </button>
+                              )}
+                            </div>
+                            <button onClick={() => deleteTransaction(t.id)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors" title="Excluir transação">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      // Grupo de parcelas
+                      const totalValue = group.transactions.reduce((sum, t) => sum + t.value, 0);
+                      const totalInstallments = group.transactions.length;
+                      const pendingCount = group.transactions.filter(t => t.status === 'pendente').length;
+                      const paidCount = group.transactions.filter(t => t.status === 'paga').length;
+                      const isExpanded = expandedGroups[group.name];
+                      const firstTransaction = group.transactions[0];
+
+                      return (
+                        <div key={group.name} className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                          {/* Cabeçalho do grupo */}
+                          <div className="flex justify-between items-center p-3 cursor-pointer" onClick={() => toggleGroupExpansion(group.name)}>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl">📦</span>
+                                <div>
+                                  <p className="font-bold text-lg">{group.name}</p>
+                                  <div className="flex items-center gap-2 flex-wrap text-sm">
+                                    <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full font-semibold">
+                                      {totalInstallments} {totalInstallments === 1 ? 'parcela' : 'parcelas'}
+                                    </span>
+                                    <span className={textClass}>•</span>
+                                    <span className={textClass}>{firstTransaction.category}</span>
+                                    {pendingCount > 0 && (
+                                      <>
+                                        <span className={textClass}>•</span>
+                                        <span className="bg-orange-500 text-white px-2 py-0.5 rounded text-xs">
+                                          {pendingCount} pendente{pendingCount > 1 ? 's' : ''}
+                                        </span>
+                                      </>
+                                    )}
+                                    {paidCount > 0 && (
+                                      <>
+                                        <span className={textClass}>•</span>
+                                        <span className="bg-green-500 text-white px-2 py-0.5 rounded text-xs">
+                                          {paidCount} paga{paidCount > 1 ? 's' : ''}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <p className={`font-bold ${firstTransaction.type === 'entrada' ? 'text-green-500' : 'text-red-500'}`}>
+                                  {firstTransaction.type === 'entrada' ? '+' : '-'} {formatCurrency(totalValue)}
+                                </p>
+                                <p className={`text-xs ${textClass}`}>Total</p>
+                              </div>
+                              <button className={`p-2 rounded-lg transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Lista de parcelas expandida */}
+                          {isExpanded && (
+                            <div className={`border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'} p-3 space-y-2`}>
+                              {group.transactions.map((t) => {
+                                const today = new Date();
+                                const dueDate = new Date(t.date);
+                                const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                                const installmentMatch = t.description.match(/\((\d+)\/(\d+)\)/);
+                                const currentInstallment = installmentMatch ? installmentMatch[1] : '';
+                                const totalInstallments = installmentMatch ? installmentMatch[2] : '';
+
+                                return (
+                                  <div key={t.id} className={`flex justify-between items-center p-2 rounded ${darkMode ? 'bg-gray-800' : 'bg-white'} border ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded font-bold">
+                                          {currentInstallment}/{totalInstallments}
+                                        </span>
+                                        <p className={`text-sm ${textClass}`}>{format(parseISO(t.date), 'dd/MM/yyyy')}</p>
+                                        {t.type === 'divida' && t.status === 'pendente' && daysUntil >= 0 && daysUntil <= 7 && (
+                                          <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded">
+                                            Vence em {daysUntil} {daysUntil === 1 ? 'dia' : 'dias'}
+                                          </span>
+                                        )}
+                                        {t.type === 'divida' && t.status === 'pendente' && daysUntil < 0 && (
+                                          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded animate-pulse">
+                                            ATRASADO {Math.abs(daysUntil)} {Math.abs(daysUntil) === 1 ? 'dia' : 'dias'}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-right">
+                                        <p className={`font-semibold ${t.type === 'entrada' ? 'text-green-500' : 'text-red-500'}`}>
+                                          {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}
+                                        </p>
+                                        {t.type === 'divida' && (
+                                          <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded transition-colors ${t.status === 'paga' ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
+                                            {t.status === 'paga' ? '✓ Paga' : '⏱ Pendente'}
+                                          </button>
+                                        )}
+                                      </div>
+                                      <button onClick={() => deleteTransaction(t.id)} className="p-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors" title="Excluir parcela">
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                  })}
               </div>
             </div>
           </div>
         )}
 
-        {/* Configurações */}
         {activeTab === 'configuracoes' && (
           <div className="space-y-6">
             <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Configurações</h2>
-
-            {/* Meta Mensal */}
             <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
               <h3 className="text-lg font-bold mb-4">Meta Mensal de Economia</h3>
               <div className="flex gap-4">
@@ -730,8 +809,6 @@ const FinTrack = () => {
                 <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">Salvar</button>
               </div>
             </div>
-
-            {/* Moeda */}
             <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
               <h3 className="text-lg font-bold mb-4">Moeda</h3>
               <select value={currency} onChange={(e) => setCurrency(e.target.value)} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}>
@@ -741,8 +818,6 @@ const FinTrack = () => {
                 <option value="GBP">Libra (£)</option>
               </select>
             </div>
-
-            {/* Categorias */}
             <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold">Categorias Personalizadas</h3>
@@ -779,8 +854,6 @@ const FinTrack = () => {
                 </div>
               </div>
             </div>
-
-            {/* Backup */}
             <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
               <h3 className="text-lg font-bold mb-4">Backup e Restauração</h3>
               <div className="flex gap-4">
@@ -793,8 +866,6 @@ const FinTrack = () => {
                 </label>
               </div>
             </div>
-
-            {/* Preferências */}
             <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
               <h3 className="text-lg font-bold mb-4">Preferências</h3>
               <div className="flex justify-between items-center">
@@ -808,7 +879,6 @@ const FinTrack = () => {
         )}
       </div>
 
-      {/* Modal Nova Transação */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto`}>
@@ -847,7 +917,6 @@ const FinTrack = () => {
         </div>
       )}
 
-      {/* Modal Nova Categoria */}
       {showCategoryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-xl p-6 max-w-md w-full`}>
@@ -867,7 +936,6 @@ const FinTrack = () => {
         </div>
       )}
 
-      {/* Bottom Navigation */}
       <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg border-t`}>
         <div className="max-w-6xl mx-auto flex justify-around items-center p-4">
           <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 ${activeTab === 'dashboard' ? 'text-blue-500' : textClass}`}>

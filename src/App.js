@@ -61,7 +61,7 @@ const FinTrack = () => {
     divida: [...defaultCategories.divida, ...customCategories.divida]
   };
 
-  const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+  const COLORS = ['#6b7280', '#4b5563', '#374151', '#9ca3af', '#1f2937', '#d1d5db', '#111827', '#e5e7eb'];
 
   const currencySymbols = { BRL: 'R$', USD: '$', EUR: '€', GBP: '£' };
 
@@ -276,7 +276,6 @@ const FinTrack = () => {
     const groups = {};
 
     transactions.forEach(t => {
-      // Extrair nome base (sem número de parcela)
       const baseName = t.description.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
       const hasInstallments = /\(\d+\/\d+\)/.test(t.description);
 
@@ -290,7 +289,6 @@ const FinTrack = () => {
         }
         groups[baseName].transactions.push(t);
       } else {
-        // Transações sem parcelas ficam sozinhas
         groups[`${baseName}-${t.id}`] = {
           name: baseName,
           transactions: [t],
@@ -323,23 +321,23 @@ const FinTrack = () => {
       <head>
         <title>FinTrack - Relatório</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #10b981; padding-bottom: 20px; }
-          .header h1 { color: #10b981; margin: 0; }
-          .info { margin: 20px 0; font-size: 14px; }
-          .summary { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .summary-item { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1f2937; background: #f9fafb; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #374151; padding-bottom: 20px; }
+          .header h1 { color: #111827; margin: 0; font-size: 32px; font-weight: 700; }
+          .info { margin: 20px 0; font-size: 14px; color: #6b7280; }
+          .summary { background: white; padding: 25px; border-radius: 12px; margin: 20px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+          .summary-item { display: flex; justify-content: space-between; margin: 12px 0; font-size: 16px; }
           .summary-item strong { color: #1f2937; }
-          .total { font-size: 18px; font-weight: bold; border-top: 2px solid #10b981; padding-top: 10px; margin-top: 10px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-          th { background: #3b82f6; color: white; padding: 12px; text-align: left; font-weight: bold; }
-          td { padding: 10px; border-bottom: 1px solid #e5e7eb; }
+          .total { font-size: 18px; font-weight: bold; border-top: 2px solid #374151; padding-top: 12px; margin-top: 12px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 30px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+          th { background: #374151; color: white; padding: 14px; text-align: left; font-weight: 600; }
+          td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
           tr:nth-child(even) { background: #f9fafb; }
-          .entrada { color: #10b981; font-weight: bold; }
-          .divida { color: #ef4444; font-weight: bold; }
-          .status-paga { background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-          .status-pendente { background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-          @media print { body { padding: 20px; } }
+          .entrada { color: #10b981; font-weight: 600; }
+          .divida { color: #ef4444; font-weight: 600; }
+          .status-paga { background: #10b981; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+          .status-pendente { background: #f59e0b; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+          @media print { body { padding: 20px; background: white; } }
         </style>
       </head>
       <body>
@@ -446,44 +444,46 @@ const FinTrack = () => {
   const upcomingBills = getUpcomingBills();
   const savingsProgress = ((filteredTotals.saldo / monthlyGoal) * 100).toFixed(1);
   const bgClass = darkMode ? 'bg-gray-900' : 'bg-gray-50';
-  const cardClass = darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900';
+  const cardClass = darkMode ? 'bg-gray-800 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-200';
   const textClass = darkMode ? 'text-gray-300' : 'text-gray-600';
 
   return (
     <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
-      <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-md p-4 sticky top-0 z-10`}>
+      <div className={`${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b border-gray-200'} shadow-sm p-4 sticky top-0 z-10 backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <DollarSign className="text-green-500" size={32} />
-            <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>FinTrack</h1>
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="FinTrack" className="w-10 h-10" />
+            <h1 className={`text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>FinTrack</h1>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">
-              <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">
+              <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
                 <Bell size={20} className={darkMode ? 'text-gray-300' : 'text-gray-600'} />
                 {notifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{notifications.length}</span>
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">{notifications.length}</span>
                 )}
               </button>
               {showNotifications && notifications.length > 0 && (
-                <div className={`absolute right-0 mt-2 w-80 ${cardClass} rounded-lg shadow-xl p-4 max-h-96 overflow-y-auto`}>
-                  <h3 className="font-bold mb-2">🔔 Notificações</h3>
+                <div className={`absolute right-0 mt-2 w-80 ${cardClass} rounded-xl shadow-2xl p-4 max-h-96 overflow-y-auto`}>
+                  <h3 className="font-bold mb-3 text-lg">🔔 Notificações</h3>
                   {notifications.map(n => (
-                    <div key={n.id} className={`p-2 mb-2 rounded ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                    <div key={n.id} className={`p-3 mb-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                       <p className="text-sm">{n.message}</p>
-                      <p className="text-xs text-orange-500">{formatCurrency(n.value)}</p>
+                      <p className="text-xs text-orange-500 font-semibold mt-1">{formatCurrency(n.value)}</p>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            <User size={20} className={darkMode ? 'text-gray-300' : 'text-gray-600'} />
-            <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{currentUser}</span>
-            <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 text-yellow-400' : 'bg-gray-100 text-gray-700'}`}>
+            <div className="flex items-center gap-2">
+              <User size={18} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
+              <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{currentUser}</span>
+            </div>
+            <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-lg transition-all ${darkMode ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-            <button onClick={handleLogout} className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
-              <LogOut size={20} />Sair
+            <button onClick={handleLogout} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>
+              <LogOut size={18} />Sair
             </button>
           </div>
         </div>
@@ -492,72 +492,80 @@ const FinTrack = () => {
       <div className="max-w-6xl mx-auto p-4 pb-24">
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
-            <div className={`${cardClass} p-4 rounded-xl shadow-lg flex items-center justify-between`}>
+            <div className={`${cardClass} p-4 rounded-xl shadow-sm flex items-center justify-between`}>
               <div className="flex items-center gap-2">
-                <Calendar size={20} className="text-blue-500" />
+                <Calendar size={20} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
                 <span className="font-semibold">Filtrar por mês:</span>
               </div>
-              <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`p-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} />
+              <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`p-2 border rounded-lg font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+              <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className={`text-sm ${textClass}`}>Entradas</p>
+                    <p className={`text-sm font-medium ${textClass}`}>Entradas</p>
                     <p className="text-2xl font-bold text-green-500">{formatCurrency(filteredTotals.entradas)}</p>
                   </div>
-                  <TrendingUp className="text-green-500" size={24} />
+                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                    <TrendingUp className="text-green-600 dark:text-green-400" size={24} />
+                  </div>
                 </div>
               </div>
-              <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+              <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className={`text-sm ${textClass}`}>Pendentes</p>
+                    <p className={`text-sm font-medium ${textClass}`}>Pendentes</p>
                     <p className="text-2xl font-bold text-orange-500">{formatCurrency(filteredTotals.dividasPendentes)}</p>
                   </div>
-                  <TrendingDown className="text-orange-500" size={24} />
+                  <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                    <TrendingDown className="text-orange-600 dark:text-orange-400" size={24} />
+                  </div>
                 </div>
               </div>
-              <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+              <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className={`text-sm ${textClass}`}>Pagas</p>
+                    <p className={`text-sm font-medium ${textClass}`}>Pagas</p>
                     <p className="text-2xl font-bold text-red-500">{formatCurrency(filteredTotals.dividasPagas)}</p>
                   </div>
-                  <TrendingDown className="text-red-500" size={24} />
+                  <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
+                    <TrendingDown className="text-red-600 dark:text-red-400" size={24} />
+                  </div>
                 </div>
               </div>
-              <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+              <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className={`text-sm ${textClass}`}>Saldo</p>
-                    <p className={`text-2xl font-bold ${filteredTotals.saldo >= 0 ? 'text-blue-500' : 'text-red-500'}`}>{formatCurrency(filteredTotals.saldo)}</p>
+                    <p className={`text-sm font-medium ${textClass}`}>Saldo</p>
+                    <p className={`text-2xl font-bold ${filteredTotals.saldo >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-500'}`}>{formatCurrency(filteredTotals.saldo)}</p>
                   </div>
-                  <DollarSign className="text-blue-500" size={24} />
+                  <div className={`p-2 rounded-lg ${filteredTotals.saldo >= 0 ? 'bg-gray-100 dark:bg-gray-700' : 'bg-red-100 dark:bg-red-900'}`}>
+                    <DollarSign className={filteredTotals.saldo >= 0 ? 'text-gray-700 dark:text-gray-300' : 'text-red-600 dark:text-red-400'} size={24} />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+            <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
               <div className="flex items-center gap-2 mb-4">
-                <Target className="text-purple-500" size={24} />
+                <Target className={darkMode ? 'text-gray-400' : 'text-gray-600'} size={24} />
                 <h2 className="text-xl font-bold">Meta de Economia Mensal</h2>
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm font-medium">
                   <span>Progresso: {formatCurrency(filteredTotals.saldo)}</span>
                   <span>Meta: {formatCurrency(monthlyGoal)}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className={`h-3 rounded-full ${savingsProgress >= 100 ? 'bg-green-500' : 'bg-purple-500'}`} style={{ width: `${Math.min(Math.abs(savingsProgress), 100)}%` }}></div>
+                <div className={`w-full rounded-full h-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                  <div className={`h-3 rounded-full transition-all ${savingsProgress >= 100 ? 'bg-green-500' : 'bg-gray-600'}`} style={{ width: `${Math.min(Math.abs(savingsProgress), 100)}%` }}></div>
                 </div>
-                <p className="text-sm text-center">{savingsProgress}% da meta alcançada</p>
+                <p className={`text-sm text-center font-medium ${textClass}`}>{savingsProgress}% da meta alcançada</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+              <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-xl font-bold mb-4">Gastos por Categoria</h2>
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
@@ -568,11 +576,11 @@ const FinTrack = () => {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+              <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-xl font-bold mb-4">Próximas Contas</h2>
                 <div className="space-y-3">
                   {upcomingBills.map(bill => (
-                    <div key={bill.id} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                    <div key={bill.id} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                       <div className="flex-1">
                         <p className="font-semibold">{bill.description}</p>
                         <p className={`text-sm ${textClass}`}>{bill.category}</p>
@@ -588,18 +596,18 @@ const FinTrack = () => {
               </div>
             </div>
 
-            <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+            <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
               <h2 className="text-xl font-bold mb-4">Evolução Mensal (Últimos 6 Meses)</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={monthlyEvolution}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
+                  <XAxis dataKey="name" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+                  <YAxis stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+                  <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ backgroundColor: darkMode ? '#1f2937' : '#ffffff', border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb') }} />
                   <Legend />
                   <Line type="monotone" dataKey="Entradas" stroke="#10b981" strokeWidth={2} />
                   <Line type="monotone" dataKey="Despesas" stroke="#ef4444" strokeWidth={2} />
-                  <Line type="monotone" dataKey="Saldo" stroke="#3b82f6" strokeWidth={2} />
+                  <Line type="monotone" dataKey="Saldo" stroke="#6b7280" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -611,40 +619,39 @@ const FinTrack = () => {
             <div className="flex justify-between items-center flex-wrap gap-2">
               <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Relatórios</h2>
               <div className="flex gap-2">
-                <button onClick={exportToCSV} className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                <button onClick={exportToCSV} className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-medium transition-colors">
                   <Download size={20} />CSV
                 </button>
-                <button onClick={exportToPDF} className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                <button onClick={exportToPDF} className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium transition-colors">
                   <FileText size={20} />PDF
                 </button>
               </div>
             </div>
-            <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+            <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
               <h3 className="text-xl font-bold mb-4">Entradas vs Dívidas</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={[{ name: 'Entradas', valor: totals.entradas }, { name: 'Pendentes', valor: totals.dividasPendentes }, { name: 'Pagas', valor: totals.dividasPagas }]}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
-                  <Bar dataKey="valor" fill="#3b82f6" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
+                  <XAxis dataKey="name" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+                  <YAxis stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+                  <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ backgroundColor: darkMode ? '#1f2937' : '#ffffff', border: '1px solid ' + (darkMode ? '#374151' : '#e5e7eb') }} />
+                  <Bar dataKey="valor" fill={darkMode ? '#6b7280' : '#4b5563'} radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+            <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
               <h3 className="text-xl font-bold mb-4">Todas as Transações</h3>
               <div className="space-y-2">
                 {groupTransactions(transactions.sort((a, b) => new Date(a.date) - new Date(b.date)))
                   .map((group) => {
                     if (!group.isGroup) {
-                      // Transação única (sem parcelas)
                       const t = group.transactions[0];
                       const today = new Date();
                       const dueDate = new Date(t.date);
                       const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
                       return (
-                        <div key={t.id} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        <div key={t.id} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                           <div className="flex-1">
                             <p className="font-semibold">{t.description}</p>
                             <div className="flex items-center gap-2 flex-wrap">
@@ -652,12 +659,12 @@ const FinTrack = () => {
                               <span className={`text-xs ${textClass}`}>•</span>
                               <p className={`text-sm ${textClass}`}>{format(parseISO(t.date), 'dd/MM/yyyy')}</p>
                               {t.type === 'divida' && t.status === 'pendente' && daysUntil >= 0 && daysUntil <= 7 && (
-                                <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded">
+                                <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
                                   Vence em {daysUntil} {daysUntil === 1 ? 'dia' : 'dias'}
                                 </span>
                               )}
                               {t.type === 'divida' && t.status === 'pendente' && daysUntil < 0 && (
-                                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded animate-pulse">
+                                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold animate-pulse">
                                   ATRASADO {Math.abs(daysUntil)} {Math.abs(daysUntil) === 1 ? 'dia' : 'dias'}
                                 </span>
                               )}
@@ -669,19 +676,18 @@ const FinTrack = () => {
                                 {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}
                               </p>
                               {t.type === 'divida' && (
-                                <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded transition-colors ${t.status === 'paga' ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
+                                <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${t.status === 'paga' ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
                                   {t.status === 'paga' ? '✓ Paga' : '⏱ Pendente'}
                                 </button>
                               )}
                             </div>
-                            <button onClick={() => deleteTransaction(t.id)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors" title="Excluir transação">
+                            <button onClick={() => deleteTransaction(t.id)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'bg-red-900 text-red-200 hover:bg-red-800' : 'bg-red-100 text-red-600 hover:bg-red-200'}`} title="Excluir transação">
                               <Trash2 size={16} />
                             </button>
                           </div>
                         </div>
                       );
                     } else {
-                      // Grupo de parcelas
                       const totalValue = group.transactions.reduce((sum, t) => sum + t.value, 0);
                       const totalInstallments = group.transactions.length;
                       const pendingCount = group.transactions.filter(t => t.status === 'pendente').length;
@@ -690,16 +696,15 @@ const FinTrack = () => {
                       const firstTransaction = group.transactions[0];
 
                       return (
-                        <div key={group.name} className={`rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                          {/* Cabeçalho do grupo */}
-                          <div className="flex justify-between items-center p-3 cursor-pointer" onClick={() => toggleGroupExpansion(group.name)}>
+                        <div key={group.name} className={`rounded-lg overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                          <div className="flex justify-between items-center p-3 cursor-pointer hover:bg-opacity-90 transition" onClick={() => toggleGroupExpansion(group.name)}>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-2xl">📦</span>
                                 <div>
                                   <p className="font-bold text-lg">{group.name}</p>
                                   <div className="flex items-center gap-2 flex-wrap text-sm">
-                                    <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full font-semibold">
+                                    <span className={`px-2 py-0.5 rounded-full font-semibold ${darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-700'}`}>
                                       {totalInstallments} {totalInstallments === 1 ? 'parcela' : 'parcelas'}
                                     </span>
                                     <span className={textClass}>•</span>
@@ -707,7 +712,7 @@ const FinTrack = () => {
                                     {pendingCount > 0 && (
                                       <>
                                         <span className={textClass}>•</span>
-                                        <span className="bg-orange-500 text-white px-2 py-0.5 rounded text-xs">
+                                        <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
                                           {pendingCount} pendente{pendingCount > 1 ? 's' : ''}
                                         </span>
                                       </>
@@ -715,7 +720,7 @@ const FinTrack = () => {
                                     {paidCount > 0 && (
                                       <>
                                         <span className={textClass}>•</span>
-                                        <span className="bg-green-500 text-white px-2 py-0.5 rounded text-xs">
+                                        <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
                                           {paidCount} paga{paidCount > 1 ? 's' : ''}
                                         </span>
                                       </>
@@ -739,9 +744,8 @@ const FinTrack = () => {
                             </div>
                           </div>
 
-                          {/* Lista de parcelas expandida */}
                           {isExpanded && (
-                            <div className={`border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'} p-3 space-y-2`}>
+                            <div className={`border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'} p-3 space-y-2 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                               {group.transactions.map((t) => {
                                 const today = new Date();
                                 const dueDate = new Date(t.date);
@@ -751,20 +755,20 @@ const FinTrack = () => {
                                 const totalInstallments = installmentMatch ? installmentMatch[2] : '';
 
                                 return (
-                                  <div key={t.id} className={`flex justify-between items-center p-2 rounded ${darkMode ? 'bg-gray-800' : 'bg-white'} border ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                                  <div key={t.id} className={`flex justify-between items-center p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} border ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                                     <div className="flex-1">
                                       <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded font-bold">
+                                        <span className={`text-xs px-2 py-1 rounded font-bold ${darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-300 text-gray-700'}`}>
                                           {currentInstallment}/{totalInstallments}
                                         </span>
                                         <p className={`text-sm ${textClass}`}>{format(parseISO(t.date), 'dd/MM/yyyy')}</p>
                                         {t.type === 'divida' && t.status === 'pendente' && daysUntil >= 0 && daysUntil <= 7 && (
-                                          <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded">
+                                          <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
                                             Vence em {daysUntil} {daysUntil === 1 ? 'dia' : 'dias'}
                                           </span>
                                         )}
                                         {t.type === 'divida' && t.status === 'pendente' && daysUntil < 0 && (
-                                          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded animate-pulse">
+                                          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold animate-pulse">
                                             ATRASADO {Math.abs(daysUntil)} {Math.abs(daysUntil) === 1 ? 'dia' : 'dias'}
                                           </span>
                                         )}
@@ -776,12 +780,12 @@ const FinTrack = () => {
                                           {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}
                                         </p>
                                         {t.type === 'divida' && (
-                                          <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded transition-colors ${t.status === 'paga' ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
+                                          <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${t.status === 'paga' ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-orange-500 text-white hover:bg-orange-600'}`}>
                                             {t.status === 'paga' ? '✓ Paga' : '⏱ Pendente'}
                                           </button>
                                         )}
                                       </div>
-                                      <button onClick={() => deleteTransaction(t.id)} className="p-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors" title="Excluir parcela">
+                                      <button onClick={() => deleteTransaction(t.id)} className={`p-1 rounded transition-colors ${darkMode ? 'bg-red-900 text-red-200 hover:bg-red-800' : 'bg-red-100 text-red-600 hover:bg-red-200'}`} title="Excluir parcela">
                                         <Trash2 size={14} />
                                       </button>
                                     </div>
@@ -802,26 +806,26 @@ const FinTrack = () => {
         {activeTab === 'configuracoes' && (
           <div className="space-y-6">
             <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Configurações</h2>
-            <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+            <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
               <h3 className="text-lg font-bold mb-4">Meta Mensal de Economia</h3>
               <div className="flex gap-4">
-                <input type="number" value={monthlyGoal} onChange={(e) => setMonthlyGoal(parseFloat(e.target.value))} className={`flex-1 p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} />
-                <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">Salvar</button>
+                <input type="number" value={monthlyGoal} onChange={(e) => setMonthlyGoal(parseFloat(e.target.value))} className={`flex-1 p-3 border rounded-lg font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
+                <button className={`px-6 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>Salvar</button>
               </div>
             </div>
-            <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+            <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
               <h3 className="text-lg font-bold mb-4">Moeda</h3>
-              <select value={currency} onChange={(e) => setCurrency(e.target.value)} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}>
+              <select value={currency} onChange={(e) => setCurrency(e.target.value)} className={`w-full p-3 border rounded-lg font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
                 <option value="BRL">Real (R$)</option>
                 <option value="USD">Dólar ($)</option>
                 <option value="EUR">Euro (€)</option>
                 <option value="GBP">Libra (£)</option>
               </select>
             </div>
-            <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+            <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold">Categorias Personalizadas</h3>
-                <button onClick={() => setShowCategoryModal(true)} className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center gap-2">
+                <button onClick={() => setShowCategoryModal(true)} className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center gap-2 font-medium transition-colors">
                   <Plus size={16} />Nova
                 </button>
               </div>
@@ -830,9 +834,9 @@ const FinTrack = () => {
                   <p className="font-semibold mb-2">Entradas:</p>
                   <div className="flex flex-wrap gap-2">
                     {customCategories.entrada.map(cat => (
-                      <span key={cat} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                      <span key={cat} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-2 font-medium">
                         {cat}
-                        <button onClick={() => handleDeleteCategory('entrada', cat)} className="hover:text-red-600">
+                        <button onClick={() => handleDeleteCategory('entrada', cat)} className="hover:text-red-600 transition-colors">
                           <X size={14} />
                         </button>
                       </span>
@@ -843,9 +847,9 @@ const FinTrack = () => {
                   <p className="font-semibold mb-2">Despesas:</p>
                   <div className="flex flex-wrap gap-2">
                     {customCategories.divida.map(cat => (
-                      <span key={cat} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                      <span key={cat} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm flex items-center gap-2 font-medium">
                         {cat}
-                        <button onClick={() => handleDeleteCategory('divida', cat)} className="hover:text-red-600">
+                        <button onClick={() => handleDeleteCategory('divida', cat)} className="hover:text-red-600 transition-colors">
                           <X size={14} />
                         </button>
                       </span>
@@ -854,24 +858,24 @@ const FinTrack = () => {
                 </div>
               </div>
             </div>
-            <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+            <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
               <h3 className="text-lg font-bold mb-4">Backup e Restauração</h3>
               <div className="flex gap-4">
-                <button onClick={exportBackup} className="flex-1 bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2">
+                <button onClick={exportBackup} className="flex-1 bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 flex items-center justify-center gap-2 font-medium transition-colors">
                   <Download size={20} />Exportar Backup
                 </button>
-                <label className="flex-1 bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 flex items-center justify-center gap-2 cursor-pointer">
+                <label className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-lg hover:bg-orange-600 flex items-center justify-center gap-2 cursor-pointer font-medium transition-colors">
                   <Upload size={20} />Importar Backup
                   <input type="file" accept=".json" onChange={importBackup} className="hidden" />
                 </label>
               </div>
             </div>
-            <div className={`${cardClass} p-6 rounded-xl shadow-lg`}>
+            <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
               <h3 className="text-lg font-bold mb-4">Preferências</h3>
               <div className="flex justify-between items-center">
-                <span>Modo Escuro</span>
-                <button onClick={() => setDarkMode(!darkMode)} className={`w-12 h-6 rounded-full ${darkMode ? 'bg-blue-500' : 'bg-gray-300'} relative transition-colors`}>
-                  <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 ${darkMode ? 'right-0.5' : 'left-0.5'} transition-all`}></div>
+                <span className="font-medium">Modo Escuro</span>
+                <button onClick={() => setDarkMode(!darkMode)} className={`w-14 h-7 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} relative transition-colors`}>
+                  <div className={`w-6 h-6 rounded-full bg-white absolute top-0.5 ${darkMode ? 'right-0.5' : 'left-0.5'} transition-all shadow-md`}></div>
                 </button>
               </div>
             </div>
@@ -881,27 +885,27 @@ const FinTrack = () => {
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`${cardClass} rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto`}>
+          <div className={`${cardClass} rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl`}>
             <h2 className="text-2xl font-bold mb-4">Nova Transação</h2>
             <div className="flex gap-2 mb-4">
-              <button onClick={() => setTransactionType('entrada')} className={`flex-1 py-2 rounded-lg ${transactionType === 'entrada' ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>Entrada</button>
-              <button onClick={() => setTransactionType('divida')} className={`flex-1 py-2 rounded-lg ${transactionType === 'divida' ? 'bg-red-500 text-white' : darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>Dívida</button>
+              <button onClick={() => setTransactionType('entrada')} className={`flex-1 py-2 rounded-lg font-medium transition-colors ${transactionType === 'entrada' ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>Entrada</button>
+              <button onClick={() => setTransactionType('divida')} className={`flex-1 py-2 rounded-lg font-medium transition-colors ${transactionType === 'divida' ? 'bg-red-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>Dívida</button>
             </div>
             <div className="space-y-4">
-              <input type="number" step="0.01" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} placeholder="Valor" />
-              <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} />
-              <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}>
+              <input type="number" step="0.01" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Valor" />
+              <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
+              <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
                 <option value="">Selecione a categoria</option>
                 {categories[transactionType].map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
-              <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} placeholder="Descrição" />
+              <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Descrição" />
               {transactionType === 'divida' && (
                 <>
-                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}>
+                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
                     <option value="pendente">Pendente</option>
                     <option value="paga">Paga</option>
                   </select>
-                  <input type="number" min="1" value={formData.installments} onChange={(e) => setFormData({ ...formData, installments: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} placeholder="Número de parcelas" />
+                  <input type="number" min="1" value={formData.installments} onChange={(e) => setFormData({ ...formData, installments: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Número de parcelas" />
                 </>
               )}
               <label className="flex items-center gap-2">
@@ -909,8 +913,8 @@ const FinTrack = () => {
                 <span>Transação recorrente</span>
               </label>
               <div className="flex gap-2">
-                <button onClick={() => setShowModal(false)} className={`flex-1 py-3 rounded-lg ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-300 text-gray-700'} hover:opacity-80`}>Cancelar</button>
-                <button onClick={handleSubmit} className="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">Salvar</button>
+                <button onClick={() => setShowModal(false)} className={`flex-1 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'}`}>Cancelar</button>
+                <button onClick={handleSubmit} className={`flex-1 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>Salvar</button>
               </div>
             </div>
           </div>
@@ -919,36 +923,36 @@ const FinTrack = () => {
 
       {showCategoryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`${cardClass} rounded-xl p-6 max-w-md w-full`}>
+          <div className={`${cardClass} rounded-2xl p-6 max-w-md w-full shadow-2xl`}>
             <h2 className="text-2xl font-bold mb-4">Nova Categoria</h2>
             <div className="space-y-4">
-              <input type="text" value={newCategory.name} onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} placeholder="Nome da categoria" />
-              <select value={newCategory.type} onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}>
+              <input type="text" value={newCategory.name} onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Nome da categoria" />
+              <select value={newCategory.type} onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
                 <option value="entrada">Entrada</option>
                 <option value="divida">Despesa</option>
               </select>
               <div className="flex gap-2">
-                <button onClick={() => setShowCategoryModal(false)} className={`flex-1 py-3 rounded-lg ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-300 text-gray-700'}`}>Cancelar</button>
-                <button onClick={handleAddCategory} className="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">Adicionar</button>
+                <button onClick={() => setShowCategoryModal(false)} className={`flex-1 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'}`}>Cancelar</button>
+                <button onClick={handleAddCategory} className="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 font-medium transition-colors">Adicionar</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg border-t`}>
+      <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg border-t backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-6xl mx-auto flex justify-around items-center p-4">
-          <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 ${activeTab === 'dashboard' ? 'text-blue-500' : textClass}`}>
-            <Home size={24} /><span className="text-xs">Início</span>
+          <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'dashboard' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
+            <Home size={24} /><span className="text-xs font-medium">Início</span>
           </button>
           <button onClick={() => setShowModal(true)} className="flex flex-col items-center gap-1 text-green-500 transform scale-110">
-            <div className="bg-green-500 text-white rounded-full p-3"><PlusCircle size={24} /></div><span className="text-xs">Nova</span>
+            <div className="bg-green-500 text-white rounded-full p-3 shadow-lg hover:bg-green-600 transition-colors"><PlusCircle size={24} /></div><span className="text-xs font-medium">Nova</span>
           </button>
-          <button onClick={() => setActiveTab('relatorios')} className={`flex flex-col items-center gap-1 ${activeTab === 'relatorios' ? 'text-blue-500' : textClass}`}>
-            <BarChart3 size={24} /><span className="text-xs">Relatórios</span>
+          <button onClick={() => setActiveTab('relatorios')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'relatorios' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
+            <BarChart3 size={24} /><span className="text-xs font-medium">Relatórios</span>
           </button>
-          <button onClick={() => setActiveTab('configuracoes')} className={`flex flex-col items-center gap-1 ${activeTab === 'configuracoes' ? 'text-blue-500' : textClass}`}>
-            <Settings size={24} /><span className="text-xs">Config</span>
+          <button onClick={() => setActiveTab('configuracoes')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'configuracoes' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
+            <Settings size={24} /><span className="text-xs font-medium">Config</span>
           </button>
         </div>
       </div>

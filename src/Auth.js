@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { DollarSign } from 'lucide-react';
 
 const Auth = ({ onLogin }) => {
     const [showLogin, setShowLogin] = useState(true);
@@ -48,12 +47,18 @@ const Auth = ({ onLogin }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-                <div className="flex items-center justify-center gap-2 mb-8">
-                    <DollarSign className="text-green-500" size={48} />
-                    <h1 className="text-4xl font-bold text-gray-900">FinTrack</h1>
+                {/* Logo */}
+                <div className="flex flex-col items-center justify-center mb-8">
+                    <img
+                        src="/logo.png"
+                        alt="FinTrack Logo"
+                        className="w-32 h-32 object-contain mb-4"
+                    />
+                    <p className="text-gray-600 text-sm mt-2">Gestão Financeira Pessoal</p>
                 </div>
+
                 {showLogin ? (
                     <div className="space-y-6">
                         <h2 className="text-2xl font-bold text-center text-gray-800">Entrar</h2>
@@ -63,7 +68,7 @@ const Auth = ({ onLogin }) => {
                                 placeholder="Email"
                                 value={loginForm.email}
                                 onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-600 focus:border-transparent"
                                 onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                             />
                             <input
@@ -71,19 +76,19 @@ const Auth = ({ onLogin }) => {
                                 placeholder="Senha"
                                 value={loginForm.password}
                                 onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-600 focus:border-transparent"
                                 onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                             />
                             <button
                                 onClick={handleLogin}
-                                className="w-full bg-blue-500 text-white py-4 rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                                className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-4 rounded-lg font-semibold hover:from-gray-900 hover:to-black transition-all duration-300 shadow-lg"
                             >
                                 Entrar
                             </button>
                         </div>
                         <p className="text-center text-gray-600">
                             Não tem uma conta?{' '}
-                            <button onClick={() => setShowLogin(false)} className="text-blue-500 font-semibold hover:underline">
+                            <button onClick={() => setShowLogin(false)} className="text-gray-800 font-semibold hover:underline">
                                 Cadastre-se
                             </button>
                         </p>
@@ -97,39 +102,39 @@ const Auth = ({ onLogin }) => {
                                 placeholder="Nome completo"
                                 value={registerForm.name}
                                 onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
-                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-600 focus:border-transparent"
                             />
                             <input
                                 type="email"
                                 placeholder="Email"
                                 value={registerForm.email}
                                 onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-600 focus:border-transparent"
                             />
                             <input
                                 type="password"
                                 placeholder="Senha (mínimo 6 caracteres)"
                                 value={registerForm.password}
                                 onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-600 focus:border-transparent"
                             />
                             <input
                                 type="password"
                                 placeholder="Confirmar senha"
                                 value={registerForm.confirmPassword}
                                 onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
-                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-600 focus:border-transparent"
                             />
                             <button
                                 onClick={handleRegister}
-                                className="w-full bg-green-500 text-white py-4 rounded-lg font-semibold hover:bg-green-600 transition-colors"
+                                className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-4 rounded-lg font-semibold hover:from-gray-900 hover:to-black transition-all duration-300 shadow-lg"
                             >
                                 Cadastrar
                             </button>
                         </div>
                         <p className="text-center text-gray-600">
                             Já tem uma conta?{' '}
-                            <button onClick={() => setShowLogin(true)} className="text-blue-500 font-semibold hover:underline">
+                            <button onClick={() => setShowLogin(true)} className="text-gray-800 font-semibold hover:underline">
                                 Entrar
                             </button>
                         </p>

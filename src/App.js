@@ -1,47 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Home, PlusCircle, BarChart3, Settings, TrendingUp, TrendingDown, DollarSign, Download, Moon, Sun, Target, Trash2, LogOut, User, Bell, Calendar, Filter, Upload, FileText, Edit2, Plus, X } from 'lucide-react';
+import { Home, PlusCircle, BarChart3, Settings, TrendingUp, TrendingDown, DollarSign, Download, Moon, Sun, Target, Trash2, LogOut, User, Bell, Calendar, Upload, FileText, Plus, X } from 'lucide-react';
 import Auth from './Auth';
-import { format, startOfMonth, endOfMonth, subMonths, parseISO } from 'date-fns';
+import { format, subMonths, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { auth, db } from './firebase';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, collection, onSnapshot } from 'firebase/firestore';
 
 const FinTrack = () => {
-  const [currentUser, setCurrentUser] = useState(() => localStorage.getItem('fintrack-current-user'));
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [darkMode, setDarkMode] = useState(() => JSON.parse(localStorage.getItem('fintrack-darkmode') || 'false'));
+  const [darkMode, setDarkMode] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [transactionType, setTransactionType] = useState('entrada');
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
 
-  const [currency, setCurrency] = useState(() => localStorage.getItem('fintrack-currency') || 'BRL');
-  const [exchangeRates, setExchangeRates] = useState({ BRL: 1, USD: 5.0, EUR: 5.5, GBP: 6.5 });
-
-  const [monthlyGoal, setMonthlyGoal] = useState(() => {
-    if (!currentUser) return 1000;
-    const saved = localStorage.getItem(`fintrack-goal-${currentUser}`);
-    return saved ? parseFloat(saved) : 1000;
-  });
-
-  const [transactions, setTransactions] = useState(() => {
-    const user = localStorage.getItem('fintrack-current-user');
-    if (!user) return [];
-    const saved = localStorage.getItem(`fintrack-transactions-${user}`);
-    if (saved && saved !== 'null') return JSON.parse(saved);
-    return [
-      { id: 1, type: 'entrada', value: 5000, date: '2025-10-01', category: 'Salário', description: 'Salário mensal', status: 'recebido', recurrent: true },
-      { id: 2, type: 'divida', value: 1200, date: '2025-10-15', category: 'Moradia', description: 'Aluguel', status: 'pendente', recurrent: true },
-      { id: 3, type: 'divida', value: 350, date: '2025-10-10', category: 'Alimentação', description: 'Supermercado', status: 'paga' }
-    ];
-  });
-
-  const [customCategories, setCustomCategories] = useState(() => {
-    if (!currentUser) return { entrada: [], divida: [] };
-    const saved = localStorage.getItem(`fintrack-categories-${currentUser}`);
-    return saved ? JSON.parse(saved) : { entrada: [], divida: [] };
-  });
-
+  const [currency, setCurrency] = useState('BRL');
+  const [exchangeRates] = useState({ BRL: 1, USD: 5.0, EUR: 5.5, GBP: 6.5 });
+  const [monthlyGoal, setMonthlyGoal] = useState(1000);
+  const [transactions, setTransactions] = useState([]);
+  const [customCategories, setCustomCategories] = useState({ entrada: [], divida: [] });
   const [notifications, setNotifications] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -62,56 +44,115 @@ const FinTrack = () => {
   };
 
   const COLORS = ['#6b7280', '#4b5563', '#374151', '#9ca3af', '#1f2937', '#d1d5db', '#111827', '#e5e7eb'];
-
   const currencySymbols = { BRL: 'R$', USD: '$', EUR: '€', GBP: '£' };
 
-  // Salvar dados
+  // Monitorar autenticação
   useEffect(() => {
-    if (currentUser && transactions.length >= 0) {
-      localStorage.setItem(`fintrack-transactions-${currentUser}`, JSON.stringify(transactions));
-    }
-  }, [transactions, currentUser]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
+  // Carregar dados do Firestore quando usuário autenticar
   useEffect(() => {
-    if (currentUser && monthlyGoal) {
-      localStorage.setItem(`fintrack-goal-${currentUser}`, monthlyGoal.toString());
-    }
-  }, [monthlyGoal, currentUser]);
+    if (!currentUser) return;
 
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem(`fintrack-categories-${currentUser}`, JSON.stringify(customCategories));
-    }
-  }, [customCategories, currentUser]);
+    const userId = currentUser.uid;
 
-  useEffect(() => {
-    localStorage.setItem('fintrack-darkmode', JSON.stringify(darkMode));
-  }, [darkMode]);
+    // Listener em tempo real para transações
+    const transactionsRef = collection(db, 'users', userId, 'transactions');
+    const unsubTransactions = onSnapshot(transactionsRef, (snapshot) => {
+      const transactionsData = [];
+      snapshot.forEach((doc) => {
+        transactionsData.push({ id: doc.id, ...doc.data() });
+      });
+      setTransactions(transactionsData);
+    });
 
-  useEffect(() => {
-    localStorage.setItem('fintrack-currency', currency);
-  }, [currency]);
+    // Carregar configurações do usuário
+    const loadUserSettings = async () => {
+      try {
+        const settingsRef = doc(db, 'users', userId, 'settings', 'preferences');
+        const settingsSnap = await getDoc(settingsRef);
 
-  // Recarregar dados quando usuário mudar
-  useEffect(() => {
-    if (currentUser) {
-      const savedTransactions = localStorage.getItem(`fintrack-transactions-${currentUser}`);
-      if (savedTransactions && savedTransactions !== 'null') {
-        setTransactions(JSON.parse(savedTransactions));
+        if (settingsSnap.exists()) {
+          const data = settingsSnap.data();
+          setMonthlyGoal(data.monthlyGoal || 1000);
+          setCurrency(data.currency || 'BRL');
+          setDarkMode(data.darkMode || false);
+          setCustomCategories(data.customCategories || { entrada: [], divida: [] });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
       }
-      const savedGoal = localStorage.getItem(`fintrack-goal-${currentUser}`);
-      if (savedGoal) setMonthlyGoal(parseFloat(savedGoal));
-      const savedCategories = localStorage.getItem(`fintrack-categories-${currentUser}`);
-      if (savedCategories) setCustomCategories(JSON.parse(savedCategories));
-    }
+    };
+
+    loadUserSettings();
+
+    return () => unsubTransactions();
   }, [currentUser]);
+
+  // Salvar configurações no Firestore
+  const saveSettings = async () => {
+    if (!currentUser) return;
+
+    try {
+      const settingsRef = doc(db, 'users', currentUser.uid, 'settings', 'preferences');
+      await setDoc(settingsRef, {
+        monthlyGoal,
+        currency,
+        darkMode,
+        customCategories,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Erro ao salvar configurações:', error);
+    }
+  };
+
+  // Salvar configurações quando mudarem
+  useEffect(() => {
+    if (currentUser) {
+      const timer = setTimeout(() => {
+        saveSettings();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [monthlyGoal, currency, darkMode, customCategories]);
+
+  // Salvar transação no Firestore
+  const saveTransaction = async (transaction) => {
+    if (!currentUser) return;
+
+    try {
+      const transactionRef = doc(db, 'users', currentUser.uid, 'transactions', transaction.id.toString());
+      await setDoc(transactionRef, transaction);
+    } catch (error) {
+      console.error('Erro ao salvar transação:', error);
+      alert('Erro ao salvar transação. Tente novamente.');
+    }
+  };
+
+  // Deletar transação do Firestore
+  const deleteTransactionFromFirestore = async (transactionId) => {
+    if (!currentUser) return;
+
+    try {
+      const transactionRef = doc(db, 'users', currentUser.uid, 'transactions', transactionId.toString());
+      await setDoc(transactionRef, { deleted: true, deletedAt: new Date().toISOString() }, { merge: true });
+    } catch (error) {
+      console.error('Erro ao deletar transação:', error);
+    }
+  };
 
   // Verificar notificações
   useEffect(() => {
     if (!currentUser) return;
     const today = new Date();
     const upcoming = transactions.filter(t => {
-      if (t.type !== 'divida' || t.status !== 'pendente') return false;
+      if (t.type !== 'divida' || t.status !== 'pendente' || t.deleted) return false;
       const dueDate = new Date(t.date);
       const diff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
       return diff >= 0 && diff <= 7;
@@ -124,9 +165,13 @@ const FinTrack = () => {
     setNotifications(upcoming);
   }, [transactions, currentUser]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('fintrack-current-user');
-    setCurrentUser(null);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setCurrentUser(null);
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
   };
 
   const convertCurrency = (value) => {
@@ -139,13 +184,14 @@ const FinTrack = () => {
 
   const getFilteredTransactions = () => {
     return transactions.filter(t => {
+      if (t.deleted) return false;
       const transDate = format(parseISO(t.date), 'yyyy-MM');
       return transDate === selectedMonth;
     });
   };
 
   const calculateTotals = (filtered = false) => {
-    const data = filtered ? getFilteredTransactions() : transactions;
+    const data = filtered ? getFilteredTransactions() : transactions.filter(t => !t.deleted);
     const entradas = data.filter(t => t.type === 'entrada').reduce((sum, t) => sum + t.value, 0);
     const dividasPendentes = data.filter(t => t.type === 'divida' && t.status === 'pendente').reduce((sum, t) => sum + t.value, 0);
     const dividasPagas = data.filter(t => t.type === 'divida' && t.status === 'paga').reduce((sum, t) => sum + t.value, 0);
@@ -170,6 +216,7 @@ const FinTrack = () => {
       const monthName = format(date, 'MMM/yy', { locale: ptBR });
 
       const monthTransactions = transactions.filter(t => {
+        if (t.deleted) return false;
         const transDate = format(parseISO(t.date), 'yyyy-MM');
         return transDate === monthKey;
       });
@@ -183,10 +230,10 @@ const FinTrack = () => {
   };
 
   const getUpcomingBills = () => {
-    return transactions.filter(t => t.type === 'divida' && t.status === 'pendente').sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
+    return transactions.filter(t => !t.deleted && t.type === 'divida' && t.status === 'pendente').sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.value || !formData.date || !formData.category || !formData.description) {
       alert('Por favor, preencha todos os campos');
       return;
@@ -204,29 +251,35 @@ const FinTrack = () => {
         const lastDayOfMonth = new Date(installmentDate.getFullYear(), installmentDate.getMonth() + 1, 0).getDate();
         installmentDate.setDate(Math.min(targetDay, lastDayOfMonth));
 
-        newTransactions.push({
-          id: Date.now() + i + Math.random(),
+        const transaction = {
+          id: `${Date.now()}-${i}-${Math.random()}`,
           type: transactionType,
           value: installmentValue,
           date: installmentDate.toISOString().split('T')[0],
           category: formData.category,
           description: `${formData.description} (${i + 1}/${formData.installments})`,
           status: 'pendente',
-          recurrent: formData.recurrent
-        });
+          recurrent: formData.recurrent,
+          createdAt: new Date().toISOString()
+        };
+
+        newTransactions.push(transaction);
+        await saveTransaction(transaction);
       }
-      setTransactions(prev => [...prev, ...newTransactions]);
     } else {
-      setTransactions(prev => [...prev, {
-        id: Date.now(),
+      const transaction = {
+        id: `${Date.now()}-${Math.random()}`,
         type: transactionType,
         value: parseFloat(formData.value),
         date: formData.date,
         category: formData.category,
         description: formData.description,
         status: formData.status,
-        recurrent: formData.recurrent
-      }]);
+        recurrent: formData.recurrent,
+        createdAt: new Date().toISOString()
+      };
+
+      await saveTransaction(transaction);
     }
 
     setShowModal(false);
@@ -255,13 +308,20 @@ const FinTrack = () => {
     }
   };
 
-  const toggleStatus = (id) => {
-    setTransactions(prev => prev.map(t => t.id === id ? { ...t, status: t.status === 'pendente' ? 'paga' : 'pendente' } : t));
+  const toggleStatus = async (id) => {
+    const transaction = transactions.find(t => t.id === id);
+    if (transaction) {
+      const updatedTransaction = {
+        ...transaction,
+        status: transaction.status === 'pendente' ? 'paga' : 'pendente'
+      };
+      await saveTransaction(updatedTransaction);
+    }
   };
 
-  const deleteTransaction = (id) => {
+  const deleteTransaction = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
-      setTransactions(prev => prev.filter(t => t.id !== id));
+      await deleteTransactionFromFirestore(id);
     }
   };
 
@@ -302,7 +362,7 @@ const FinTrack = () => {
 
   const exportToCSV = () => {
     const headers = ['Tipo,Valor,Data,Categoria,Descrição,Status'];
-    const rows = transactions.map(t => `${t.type},${t.value},${t.date},${t.category},${t.description},${t.status}`);
+    const rows = transactions.filter(t => !t.deleted).map(t => `${t.type},${t.value},${t.date},${t.category},${t.description},${t.status}`);
     const csv = [headers, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -345,7 +405,7 @@ const FinTrack = () => {
           <h1>💰 FinTrack - Relatório Financeiro</h1>
         </div>
         <div class="info">
-          <p><strong>Usuário:</strong> ${currentUser}</p>
+          <p><strong>Usuário:</strong> ${currentUser.email}</p>
           <p><strong>Data do Relatório:</strong> ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
         </div>
         <div class="summary">
@@ -380,7 +440,7 @@ const FinTrack = () => {
             </tr>
           </thead>
           <tbody>
-            ${transactions.map(t => `
+            ${transactions.filter(t => !t.deleted).map(t => `
               <tr>
                 <td><span class="${t.type}">${t.type === 'entrada' ? '📈 Entrada' : '📉 Despesa'}</span></td>
                 <td>${t.description}</td>
@@ -403,7 +463,7 @@ const FinTrack = () => {
   };
 
   const exportBackup = () => {
-    const backup = { transactions, monthlyGoal, customCategories, currency, exportDate: new Date().toISOString() };
+    const backup = { transactions: transactions.filter(t => !t.deleted), monthlyGoal, customCategories, currency, exportDate: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -416,11 +476,14 @@ const FinTrack = () => {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const backup = JSON.parse(e.target.result);
         if (window.confirm('Isso irá substituir todos os seus dados atuais. Deseja continuar?')) {
-          setTransactions(backup.transactions || []);
+          // Importar transações
+          for (const transaction of backup.transactions) {
+            await saveTransaction(transaction);
+          }
           setMonthlyGoal(backup.monthlyGoal || 1000);
           setCustomCategories(backup.customCategories || { entrada: [], divida: [] });
           setCurrency(backup.currency || 'BRL');
@@ -433,8 +496,19 @@ const FinTrack = () => {
     reader.readAsText(file);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
-    return <Auth onLogin={(email) => setCurrentUser(email)} />;
+    return <Auth onLogin={(user) => setCurrentUser(user)} />;
   }
 
   const totals = calculateTotals();
@@ -477,7 +551,7 @@ const FinTrack = () => {
             </div>
             <div className="flex items-center gap-2">
               <User size={18} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
-              <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{currentUser}</span>
+              <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{currentUser.email}</span>
             </div>
             <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-lg transition-all ${darkMode ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
@@ -567,14 +641,18 @@ const FinTrack = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-xl font-bold mb-4">Gastos por Categoria</h2>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie data={expensesByCategory} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
-                      {expensesByCategory.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
-                  </PieChart>
-                </ResponsiveContainer>
+                {expensesByCategory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie data={expensesByCategory} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
+                        {expensesByCategory.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip formatter={(value) => formatCurrency(value)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className={`text-center py-16 ${textClass}`}>Nenhuma despesa neste mês</p>
+                )}
               </div>
               <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-xl font-bold mb-4">Próximas Contas</h2>
@@ -642,7 +720,7 @@ const FinTrack = () => {
             <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>
               <h3 className="text-xl font-bold mb-4">Todas as Transações</h3>
               <div className="space-y-2">
-                {groupTransactions(transactions.sort((a, b) => new Date(a.date) - new Date(b.date)))
+                {groupTransactions(transactions.filter(t => !t.deleted).sort((a, b) => new Date(a.date) - new Date(b.date)))
                   .map((group) => {
                     if (!group.isGroup) {
                       const t = group.transactions[0];
@@ -810,7 +888,7 @@ const FinTrack = () => {
               <h3 className="text-lg font-bold mb-4">Meta Mensal de Economia</h3>
               <div className="flex gap-4">
                 <input type="number" value={monthlyGoal} onChange={(e) => setMonthlyGoal(parseFloat(e.target.value))} className={`flex-1 p-3 border rounded-lg font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
-                <button className={`px-6 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>Salvar</button>
+                <button onClick={saveSettings} className={`px-6 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>Salvar</button>
               </div>
             </div>
             <div className={`${cardClass} p-6 rounded-xl shadow-sm`}>

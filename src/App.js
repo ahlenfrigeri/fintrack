@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Home, PlusCircle, BarChart3, Settings, TrendingUp, TrendingDown, DollarSign, Download, Moon, Sun, Target, Trash2, LogOut, User, Bell, Calendar, Upload, FileText, Plus, X, Users, UserPlus, Clock, Check } from 'lucide-react';
+import { Home, PlusCircle, BarChart3, Settings, TrendingUp, TrendingDown, DollarSign, Download, Moon, Sun, Target, Trash2, LogOut, User, Bell, Calendar, Upload, FileText, Plus, X, Users, Share2, UserPlus, Clock, Check } from 'lucide-react';
 import Auth from './Auth';
 import { format, subMonths, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -28,6 +28,8 @@ const FinTrack = () => {
   const [notifications, setNotifications] = useState([]);
   const [sharedUsers, setSharedUsers] = useState([]);
   const [shareEmail, setShareEmail] = useState('');
+
+  // 🔧 FIX: Adicionar estado para controlar salvamento
   const [settingsChanged, setSettingsChanged] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -50,6 +52,7 @@ const FinTrack = () => {
   const COLORS = ['#6b7280', '#4b5563', '#374151', '#9ca3af', '#1f2937', '#d1d5db', '#111827', '#e5e7eb'];
   const currencySymbols = { BRL: 'R$', USD: '$', EUR: '€', GBP: '£' };
 
+  // Auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -58,10 +61,13 @@ const FinTrack = () => {
     return () => unsubscribe();
   }, []);
 
+  // Load transactions and settings
   useEffect(() => {
     if (!currentUser) return;
 
     const userId = currentUser.uid;
+
+    // Transactions listener
     const transactionsRef = collection(db, 'users', userId, 'transactions');
     const unsubTransactions = onSnapshot(
       transactionsRef,
@@ -74,9 +80,11 @@ const FinTrack = () => {
       },
       (error) => {
         console.error('Erro ao carregar transações:', error);
+        alert('Erro ao carregar transações. Verifique sua conexão.');
       }
     );
 
+    // Load settings
     const loadUserSettings = async () => {
       try {
         const settingsRef = doc(db, 'users', userId, 'settings', 'preferences');
@@ -92,6 +100,7 @@ const FinTrack = () => {
         }
       } catch (error) {
         console.error('Erro ao carregar configurações:', error);
+        alert('Erro ao carregar configurações.');
       }
     };
 
@@ -99,6 +108,7 @@ const FinTrack = () => {
     return () => unsubTransactions();
   }, [currentUser]);
 
+  // 🔧 FIX: Salvar configurações apenas quando necessário
   const saveSettings = useCallback(async () => {
     if (!currentUser || !settingsChanged) return;
 
@@ -113,19 +123,25 @@ const FinTrack = () => {
         updatedAt: new Date().toISOString()
       });
       setSettingsChanged(false);
+      console.log('✅ Configurações salvas');
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
+      alert('Erro ao salvar configurações.');
     }
   }, [currentUser, monthlyGoal, currency, darkMode, customCategories, sharedUsers, settingsChanged]);
 
+  // 🔧 FIX: Debounce para salvar configurações
   useEffect(() => {
     if (!settingsChanged) return;
+
     const timer = setTimeout(() => {
       saveSettings();
-    }, 2000);
+    }, 2000); // Salva após 2 segundos de inatividade
+
     return () => clearTimeout(timer);
   }, [saveSettings, settingsChanged]);
 
+  // Marcar que configurações mudaram
   useEffect(() => {
     if (currentUser) {
       setSettingsChanged(true);
@@ -138,6 +154,7 @@ const FinTrack = () => {
     try {
       const transactionRef = doc(db, 'users', currentUser.uid, 'transactions', transaction.id.toString());
       await setDoc(transactionRef, transaction);
+      console.log('✅ Transação salva');
     } catch (error) {
       console.error('Erro ao salvar transação:', error);
       alert('Erro ao salvar transação. Tente novamente.');
@@ -150,8 +167,10 @@ const FinTrack = () => {
     try {
       const transactionRef = doc(db, 'users', currentUser.uid, 'transactions', transactionId.toString());
       await setDoc(transactionRef, { deleted: true, deletedAt: new Date().toISOString() }, { merge: true });
+      console.log('✅ Transação deletada');
     } catch (error) {
       console.error('Erro ao deletar transação:', error);
+      alert('Erro ao deletar transação.');
     }
   };
 
@@ -184,15 +203,18 @@ const FinTrack = () => {
     }
   };
 
+  // 🔧 FIX: Notificações com tratamento de erro
   useEffect(() => {
     if (!currentUser) return;
 
     try {
       const today = new Date();
       const upcoming = transactions.filter(t => {
+        // 🔧 FIX: Filtrar deletados
         if (t.deleted) return false;
         if (t.type !== 'divida' || t.status !== 'pendente') return false;
 
+        // 🔧 FIX: Validar data antes de usar
         const dueDate = parseISO(t.date);
         if (!isValid(dueDate)) return false;
 
@@ -216,6 +238,7 @@ const FinTrack = () => {
       setCurrentUser(null);
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
+      alert('Erro ao fazer logout.');
     }
   };
 
@@ -227,10 +250,13 @@ const FinTrack = () => {
     return `${currencySymbols[currency]} ${convertCurrency(value)}`;
   };
 
+  // 🔧 FIX: Usar useMemo para evitar recalcular
   const getFilteredTransactions = useMemo(() => {
     return transactions.filter(t => {
+      // 🔧 FIX: Sempre filtrar deletados
       if (t.deleted) return false;
 
+      // 🔧 FIX: Validar data antes de usar
       try {
         const transDate = parseISO(t.date);
         if (!isValid(transDate)) return false;
@@ -244,6 +270,7 @@ const FinTrack = () => {
     });
   }, [transactions, selectedMonth]);
 
+  // 🔧 FIX: Usar useMemo para cálculos
   const calculateTotals = useCallback((filtered = false) => {
     const data = filtered ? getFilteredTransactions : transactions.filter(t => !t.deleted);
 
@@ -285,6 +312,7 @@ const FinTrack = () => {
       const monthName = format(date, 'MMM/yy', { locale: ptBR });
 
       const monthTransactions = transactions.filter(t => {
+        // 🔧 FIX: Filtrar deletados
         if (t.deleted) return false;
 
         try {
@@ -320,6 +348,7 @@ const FinTrack = () => {
       const monthName = format(date, 'MMM', { locale: ptBR });
 
       const monthTransactions = transactions.filter(t => {
+        // 🔧 FIX: Filtrar deletados
         if (t.deleted || t.type !== 'divida') return false;
 
         try {
@@ -368,6 +397,7 @@ const FinTrack = () => {
       return;
     }
 
+    // 🔧 FIX: Validar valor
     const value = parseFloat(formData.value);
     if (value <= 0 || isNaN(value)) {
       alert('Por favor, insira um valor válido maior que zero');
@@ -432,6 +462,7 @@ const FinTrack = () => {
       return;
     }
 
+    // 🔧 FIX: Verificar duplicatas
     if (categories[newCategory.type].includes(newCategory.name)) {
       alert('Esta categoria já existe!');
       return;
@@ -474,6 +505,7 @@ const FinTrack = () => {
       await saveTransaction(updatedTransaction);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
+      alert('Erro ao atualizar status.');
     }
   };
 
@@ -684,6 +716,7 @@ const FinTrack = () => {
 
   return (
     <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
+      {/* Header - mantém o mesmo código */}
       <div className={`${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b border-gray-200'} shadow-sm p-3 md:p-4 sticky top-0 z-10 backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2 md:gap-3">
@@ -731,6 +764,7 @@ const FinTrack = () => {
       <div className="max-w-7xl mx-auto p-3 md:p-4 pb-24">
         {activeTab === 'dashboard' && (
           <div className="space-y-4 md:space-y-6">
+            {/* Filtro de mês */}
             <div className={`${cardClass} p-3 md:p-4 rounded-xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3`}>
               <div className="flex items-center gap-2">
                 <Calendar size={18} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
@@ -739,6 +773,7 @@ const FinTrack = () => {
               <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`w-full sm:w-auto p-2 border rounded-lg font-medium text-sm md:text-base ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
             </div>
 
+            {/* Cards resumo */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <div className="flex flex-col gap-2">
@@ -796,6 +831,8 @@ const FinTrack = () => {
               </div>
             </div>
 
+            {/* Resto do dashboard continua igual... */}
+            {/* Meta de economia */}
             <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
               <div className="flex items-center gap-2 mb-4">
                 <Target className={darkMode ? 'text-gray-400' : 'text-gray-600'} size={20} />
@@ -813,7 +850,9 @@ const FinTrack = () => {
               </div>
             </div>
 
+            {/* Gráficos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              {/* Despesas por categoria */}
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-lg md:text-xl font-bold mb-4">Despesas por Categoria</h2>
                 {expensesByCategory.length > 0 ? (
@@ -830,6 +869,7 @@ const FinTrack = () => {
                 )}
               </div>
 
+              {/* Entradas por categoria */}
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-lg md:text-xl font-bold mb-4">Entradas por Categoria</h2>
                 {incomeByCategory.length > 0 ? (
@@ -846,6 +886,7 @@ const FinTrack = () => {
                 )}
               </div>
 
+              {/* Próximas contas */}
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-lg md:text-xl font-bold mb-4">Próximas Contas</h2>
                 <div className="space-y-3">
@@ -873,6 +914,7 @@ const FinTrack = () => {
                 </div>
               </div>
 
+              {/* Tendência de categorias */}
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-lg md:text-xl font-bold mb-4">Tendência de Despesas</h2>
                 {categoryTrends.length > 0 && categoryTrends.some(m => Object.keys(m).length > 1) ? (
@@ -894,6 +936,7 @@ const FinTrack = () => {
               </div>
             </div>
 
+            {/* Evolução anual */}
             <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
               <h2 className="text-lg md:text-xl font-bold mb-4">Evolução Anual (Últimos 12 Meses)</h2>
               <ResponsiveContainer width="100%" height={300}>
@@ -1259,6 +1302,7 @@ const FinTrack = () => {
         )}
       </div>
 
+      {/* Modal nova transação */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-2xl p-4 md:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl`}>
@@ -1301,6 +1345,7 @@ const FinTrack = () => {
         </div>
       )}
 
+      {/* Modal compartilhar */}
       {showShareModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-2xl p-4 md:p-6 max-w-md w-full shadow-2xl`}>
@@ -1322,6 +1367,7 @@ const FinTrack = () => {
         </div>
       )}
 
+      {/* Modal categoria */}
       {showCategoryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-2xl p-4 md:p-6 max-w-md w-full shadow-2xl`}>
@@ -1341,6 +1387,7 @@ const FinTrack = () => {
         </div>
       )}
 
+      {/* Bottom navigation */}
       <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg border-t backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-7xl mx-auto flex justify-around items-center p-2 md:p-4">
           <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'dashboard' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>

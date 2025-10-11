@@ -15,49 +15,27 @@ node_modules
 # ⚠️ IMPORTANTE: Nunca commite arquivos com credenciais!
 .env
 .env.local
-.env.development
 .env.development.local
-.env.test
 .env.test.local
-.env.production
 .env.production.local
+.env.production
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-lerna-debug.log*
 
 # IDE
 .vscode
 .idea
-*.swp
-*.swo
-*~
-.project
-.classpath
-.settings/
 
 # Firebase
 .firebase/
 .firebaserc
 firebase-debug.log
 firestore-debug.log
-ui-debug.log
 
-# OS
-Thumbs.db
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Temporary files
-*.tmp
-*.temp
-.cache/
+# Outros
+*.swp
+*.swo
+*~

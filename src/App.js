@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Home, PlusCircle, BarChart3, Settings, TrendingUp, TrendingDown, DollarSign, Download, Moon, Sun, Target, Trash2, LogOut, User, Bell, Calendar, Upload, FileText, Plus, X, Users, Share2, UserPlus, Clock, Check } from 'lucide-react';
+import { Home, PlusCircle, BarChart3, Settings, TrendingUp, TrendingDown, DollarSign, Download, Moon, Sun, Target, Trash2, LogOut, User, Bell, Calendar, Upload, FileText, Plus, X, Users, UserPlus, Clock, Check } from 'lucide-react';
 import Auth from './Auth';
-import { format, subMonths, parseISO } from 'date-fns';
+import { format, subMonths, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { auth, db } from './firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
@@ -28,6 +28,7 @@ const FinTrack = () => {
   const [notifications, setNotifications] = useState([]);
   const [sharedUsers, setSharedUsers] = useState([]);
   const [shareEmail, setShareEmail] = useState('');
+  const [settingsChanged, setSettingsChanged] = useState(false);
 
   const [formData, setFormData] = useState({
     value: '', date: '', category: '', description: '', status: 'pendente', recurrent: false, installments: 1
@@ -62,13 +63,19 @@ const FinTrack = () => {
 
     const userId = currentUser.uid;
     const transactionsRef = collection(db, 'users', userId, 'transactions');
-    const unsubTransactions = onSnapshot(transactionsRef, (snapshot) => {
-      const transactionsData = [];
-      snapshot.forEach((doc) => {
-        transactionsData.push({ id: doc.id, ...doc.data() });
-      });
-      setTransactions(transactionsData);
-    });
+    const unsubTransactions = onSnapshot(
+      transactionsRef,
+      (snapshot) => {
+        const transactionsData = [];
+        snapshot.forEach((doc) => {
+          transactionsData.push({ id: doc.id, ...doc.data() });
+        });
+        setTransactions(transactionsData);
+      },
+      (error) => {
+        console.error('Erro ao carregar transações:', error);
+      }
+    );
 
     const loadUserSettings = async () => {
       try {
@@ -92,8 +99,8 @@ const FinTrack = () => {
     return () => unsubTransactions();
   }, [currentUser]);
 
-  const saveSettings = async () => {
-    if (!currentUser) return;
+  const saveSettings = useCallback(async () => {
+    if (!currentUser || !settingsChanged) return;
 
     try {
       const settingsRef = doc(db, 'users', currentUser.uid, 'settings', 'preferences');
@@ -105,19 +112,25 @@ const FinTrack = () => {
         sharedUsers,
         updatedAt: new Date().toISOString()
       });
+      setSettingsChanged(false);
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
     }
-  };
+  }, [currentUser, monthlyGoal, currency, darkMode, customCategories, sharedUsers, settingsChanged]);
+
+  useEffect(() => {
+    if (!settingsChanged) return;
+    const timer = setTimeout(() => {
+      saveSettings();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [saveSettings, settingsChanged]);
 
   useEffect(() => {
     if (currentUser) {
-      const timer = setTimeout(() => {
-        saveSettings();
-      }, 1000);
-      return () => clearTimeout(timer);
+      setSettingsChanged(true);
     }
-  }, [monthlyGoal, currency, darkMode, customCategories, sharedUsers]);
+  }, [monthlyGoal, currency, darkMode, customCategories, sharedUsers, currentUser]);
 
   const saveTransaction = async (transaction) => {
     if (!currentUser) return;
@@ -173,19 +186,28 @@ const FinTrack = () => {
 
   useEffect(() => {
     if (!currentUser) return;
-    const today = new Date();
-    const upcoming = transactions.filter(t => {
-      if (t.type !== 'divida' || t.status !== 'pendente' || t.deleted) return false;
-      const dueDate = new Date(t.date);
-      const diff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-      return diff >= 0 && diff <= 7;
-    }).map(t => ({
-      id: t.id,
-      message: `Conta "${t.description}" vence em ${Math.ceil((new Date(t.date) - today) / (1000 * 60 * 60 * 24))} dias`,
-      date: t.date,
-      value: t.value
-    }));
-    setNotifications(upcoming);
+
+    try {
+      const today = new Date();
+      const upcoming = transactions.filter(t => {
+        if (t.deleted) return false;
+        if (t.type !== 'divida' || t.status !== 'pendente') return false;
+
+        const dueDate = parseISO(t.date);
+        if (!isValid(dueDate)) return false;
+
+        const diff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        return diff >= 0 && diff <= 7;
+      }).map(t => ({
+        id: t.id,
+        message: `Conta "${t.description}" vence em ${Math.ceil((parseISO(t.date) - today) / (1000 * 60 * 60 * 24))} dias`,
+        date: t.date,
+        value: t.value
+      }));
+      setNotifications(upcoming);
+    } catch (error) {
+      console.error('Erro ao calcular notificações:', error);
+    }
   }, [transactions, currentUser]);
 
   const handleLogout = async () => {
@@ -205,44 +227,57 @@ const FinTrack = () => {
     return `${currencySymbols[currency]} ${convertCurrency(value)}`;
   };
 
-  const getFilteredTransactions = () => {
+  const getFilteredTransactions = useMemo(() => {
     return transactions.filter(t => {
       if (t.deleted) return false;
-      const transDate = format(parseISO(t.date), 'yyyy-MM');
-      return transDate === selectedMonth;
-    });
-  };
 
-  const calculateTotals = (filtered = false) => {
-    const data = filtered ? getFilteredTransactions() : transactions.filter(t => !t.deleted);
+      try {
+        const transDate = parseISO(t.date);
+        if (!isValid(transDate)) return false;
+
+        const monthKey = format(transDate, 'yyyy-MM');
+        return monthKey === selectedMonth;
+      } catch (error) {
+        console.error('Erro ao filtrar transação:', error);
+        return false;
+      }
+    });
+  }, [transactions, selectedMonth]);
+
+  const calculateTotals = useCallback((filtered = false) => {
+    const data = filtered ? getFilteredTransactions : transactions.filter(t => !t.deleted);
+
     const entradas = data.filter(t => t.type === 'entrada' && (t.status === 'recebido' || t.status === 'paga')).reduce((sum, t) => sum + t.value, 0);
     const entradasPendentes = data.filter(t => t.type === 'entrada' && t.status === 'pendente').reduce((sum, t) => sum + t.value, 0);
     const dividasPendentes = data.filter(t => t.type === 'divida' && t.status === 'pendente').reduce((sum, t) => sum + t.value, 0);
     const dividasPagas = data.filter(t => t.type === 'divida' && t.status === 'paga').reduce((sum, t) => sum + t.value, 0);
     const saldo = entradas - dividasPagas;
     const saldoProjetado = entradas + entradasPendentes - dividasPendentes - dividasPagas;
+
     return { entradas, entradasPendentes, dividasPendentes, dividasPagas, saldo, saldoProjetado };
-  };
+  }, [transactions, getFilteredTransactions]);
 
-  const getExpensesByCategory = () => {
-    const filtered = getFilteredTransactions();
+  const getExpensesByCategory = useMemo(() => {
     const categoryMap = {};
-    filtered.filter(t => t.type === 'divida').forEach(t => {
-      categoryMap[t.category] = (categoryMap[t.category] || 0) + t.value;
-    });
+    getFilteredTransactions
+      .filter(t => t.type === 'divida')
+      .forEach(t => {
+        categoryMap[t.category] = (categoryMap[t.category] || 0) + t.value;
+      });
     return Object.entries(categoryMap).map(([name, value]) => ({ name, value }));
-  };
+  }, [getFilteredTransactions]);
 
-  const getIncomeByCategory = () => {
-    const filtered = getFilteredTransactions();
+  const getIncomeByCategory = useMemo(() => {
     const categoryMap = {};
-    filtered.filter(t => t.type === 'entrada').forEach(t => {
-      categoryMap[t.category] = (categoryMap[t.category] || 0) + t.value;
-    });
+    getFilteredTransactions
+      .filter(t => t.type === 'entrada')
+      .forEach(t => {
+        categoryMap[t.category] = (categoryMap[t.category] || 0) + t.value;
+      });
     return Object.entries(categoryMap).map(([name, value]) => ({ name, value }));
-  };
+  }, [getFilteredTransactions]);
 
-  const getMonthlyEvolution = () => {
+  const getMonthlyEvolution = useMemo(() => {
     const months = [];
     for (let i = 11; i >= 0; i--) {
       const date = subMonths(new Date(), i);
@@ -251,8 +286,16 @@ const FinTrack = () => {
 
       const monthTransactions = transactions.filter(t => {
         if (t.deleted) return false;
-        const transDate = format(parseISO(t.date), 'yyyy-MM');
-        return transDate === monthKey;
+
+        try {
+          const transDate = parseISO(t.date);
+          if (!isValid(transDate)) return false;
+
+          const transMonth = format(transDate, 'yyyy-MM');
+          return transMonth === monthKey;
+        } catch (error) {
+          return false;
+        }
       });
 
       const entradas = monthTransactions.filter(t => t.type === 'entrada' && (t.status === 'recebido' || t.status === 'paga')).reduce((sum, t) => sum + t.value, 0);
@@ -267,9 +310,9 @@ const FinTrack = () => {
       });
     }
     return months;
-  };
+  }, [transactions]);
 
-  const getCategoryTrends = () => {
+  const getCategoryTrends = useMemo(() => {
     const last3Months = [];
     for (let i = 2; i >= 0; i--) {
       const date = subMonths(new Date(), i);
@@ -278,8 +321,16 @@ const FinTrack = () => {
 
       const monthTransactions = transactions.filter(t => {
         if (t.deleted || t.type !== 'divida') return false;
-        const transDate = format(parseISO(t.date), 'yyyy-MM');
-        return transDate === monthKey;
+
+        try {
+          const transDate = parseISO(t.date);
+          if (!isValid(transDate)) return false;
+
+          const transMonth = format(transDate, 'yyyy-MM');
+          return transMonth === monthKey;
+        } catch (error) {
+          return false;
+        }
       });
 
       const categoryData = { month: monthName };
@@ -294,11 +345,22 @@ const FinTrack = () => {
       last3Months.push(categoryData);
     }
     return last3Months;
-  };
+  }, [transactions, categories.divida]);
 
-  const getUpcomingBills = () => {
-    return transactions.filter(t => !t.deleted && t.type === 'divida' && t.status === 'pendente').sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
-  };
+  const getUpcomingBills = useMemo(() => {
+    return transactions
+      .filter(t => !t.deleted && t.type === 'divida' && t.status === 'pendente')
+      .sort((a, b) => {
+        try {
+          const dateA = parseISO(a.date);
+          const dateB = parseISO(b.date);
+          return dateA - dateB;
+        } catch (error) {
+          return 0;
+        }
+      })
+      .slice(0, 5);
+  }, [transactions]);
 
   const handleSubmit = async () => {
     if (!formData.value || !formData.date || !formData.category || !formData.description) {
@@ -306,49 +368,62 @@ const FinTrack = () => {
       return;
     }
 
-    if (formData.installments > 1) {
-      const installmentValue = parseFloat(formData.value) / parseInt(formData.installments);
+    const value = parseFloat(formData.value);
+    if (value <= 0 || isNaN(value)) {
+      alert('Por favor, insira um valor válido maior que zero');
+      return;
+    }
 
-      for (let i = 0; i < formData.installments; i++) {
-        const installmentDate = new Date(formData.date);
-        installmentDate.setMonth(installmentDate.getMonth() + i);
+    try {
+      if (formData.installments > 1) {
+        const installmentValue = value / parseInt(formData.installments);
 
-        const targetDay = new Date(formData.date).getDate();
-        const lastDayOfMonth = new Date(installmentDate.getFullYear(), installmentDate.getMonth() + 1, 0).getDate();
-        installmentDate.setDate(Math.min(targetDay, lastDayOfMonth));
+        for (let i = 0; i < formData.installments; i++) {
+          const installmentDate = new Date(formData.date);
+          installmentDate.setMonth(installmentDate.getMonth() + i);
 
+          const targetDay = new Date(formData.date).getDate();
+          const lastDayOfMonth = new Date(installmentDate.getFullYear(), installmentDate.getMonth() + 1, 0).getDate();
+          installmentDate.setDate(Math.min(targetDay, lastDayOfMonth));
+
+          const transaction = {
+            id: `${Date.now()}-${i}-${Math.random()}`,
+            type: transactionType,
+            value: installmentValue,
+            date: installmentDate.toISOString().split('T')[0],
+            category: formData.category,
+            description: `${formData.description} (${i + 1}/${formData.installments})`,
+            status: 'pendente',
+            recurrent: formData.recurrent,
+            createdAt: new Date().toISOString(),
+            deleted: false
+          };
+
+          await saveTransaction(transaction);
+        }
+      } else {
         const transaction = {
-          id: `${Date.now()}-${i}-${Math.random()}`,
+          id: `${Date.now()}-${Math.random()}`,
           type: transactionType,
-          value: installmentValue,
-          date: installmentDate.toISOString().split('T')[0],
+          value: value,
+          date: formData.date,
           category: formData.category,
-          description: `${formData.description} (${i + 1}/${formData.installments})`,
-          status: 'pendente',
+          description: formData.description,
+          status: formData.status,
           recurrent: formData.recurrent,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          deleted: false
         };
 
         await saveTransaction(transaction);
       }
-    } else {
-      const transaction = {
-        id: `${Date.now()}-${Math.random()}`,
-        type: transactionType,
-        value: parseFloat(formData.value),
-        date: formData.date,
-        category: formData.category,
-        description: formData.description,
-        status: formData.status,
-        recurrent: formData.recurrent,
-        createdAt: new Date().toISOString()
-      };
 
-      await saveTransaction(transaction);
+      setShowModal(false);
+      setFormData({ value: '', date: '', category: '', description: '', status: 'pendente', recurrent: false, installments: 1 });
+    } catch (error) {
+      console.error('Erro ao criar transação:', error);
+      alert('Erro ao criar transação. Tente novamente.');
     }
-
-    setShowModal(false);
-    setFormData({ value: '', date: '', category: '', description: '', status: 'pendente', recurrent: false, installments: 1 });
   };
 
   const handleAddCategory = () => {
@@ -356,6 +431,12 @@ const FinTrack = () => {
       alert('Digite o nome da categoria');
       return;
     }
+
+    if (categories[newCategory.type].includes(newCategory.name)) {
+      alert('Esta categoria já existe!');
+      return;
+    }
+
     setCustomCategories(prev => ({
       ...prev,
       [newCategory.type]: [...prev[newCategory.type], newCategory.name]
@@ -375,7 +456,9 @@ const FinTrack = () => {
 
   const toggleStatus = async (id) => {
     const transaction = transactions.find(t => t.id === id);
-    if (transaction) {
+    if (!transaction) return;
+
+    try {
       let newStatus = transaction.status;
 
       if (transaction.type === 'divida') {
@@ -389,6 +472,8 @@ const FinTrack = () => {
         status: newStatus
       };
       await saveTransaction(updatedTransaction);
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
     }
   };
 
@@ -405,10 +490,10 @@ const FinTrack = () => {
     }));
   };
 
-  const groupTransactions = (transactions) => {
+  const groupTransactions = useCallback((transactionsList) => {
     const groups = {};
 
-    transactions.forEach(t => {
+    transactionsList.forEach(t => {
       const baseName = t.description.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
       const hasInstallments = /\(\d+\/\d+\)/.test(t.description);
 
@@ -431,99 +516,140 @@ const FinTrack = () => {
     });
 
     return Object.values(groups);
-  };
+  }, []);
 
   const exportToCSV = () => {
-    const headers = ['Tipo,Valor,Data,Categoria,Descrição,Status'];
-    const rows = transactions.filter(t => !t.deleted).map(t => `${t.type},${t.value},${t.date},${t.category},${t.description},${t.status}`);
-    const csv = [headers, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'fintrack-relatorio.csv';
-    a.click();
+    try {
+      const headers = ['Tipo,Valor,Data,Categoria,Descrição,Status'];
+      const rows = transactions
+        .filter(t => !t.deleted)
+        .map(t => `${t.type},${t.value},${t.date},${t.category},"${t.description}",${t.status}`);
+      const csv = [headers, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fintrack-relatorio-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erro ao exportar CSV:', error);
+      alert('Erro ao exportar relatório.');
+    }
   };
 
   const exportToPDF = () => {
-    const totals = calculateTotals();
-    const printWindow = window.open('', '_blank');
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>FinTrack - Relatório</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1f2937; background: #f9fafb; }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #374151; padding-bottom: 20px; }
-          .header h1 { color: #111827; margin: 0; font-size: 32px; font-weight: 700; }
-          .summary { background: white; padding: 25px; border-radius: 12px; margin: 20px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-          .summary-item { display: flex; justify-content: space-between; margin: 12px 0; font-size: 16px; }
-          @media print { body { padding: 20px; background: white; } }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>💰 FinTrack - Relatório Financeiro</h1>
-        </div>
-        <div class="summary">
-          <h2>📊 Resumo Financeiro</h2>
-          <div class="summary-item">
-            <span><strong>Entradas Recebidas:</strong></span>
-            <span>${formatCurrency(totals.entradas)}</span>
+    try {
+      const totals = calculateTotals();
+      const printWindow = window.open('', '_blank');
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>FinTrack - Relatório</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1f2937; background: #f9fafb; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #374151; padding-bottom: 20px; }
+            .header h1 { color: #111827; margin: 0; font-size: 32px; font-weight: 700; }
+            .summary { background: white; padding: 25px; border-radius: 12px; margin: 20px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+            .summary-item { display: flex; justify-content: space-between; margin: 12px 0; font-size: 16px; }
+            @media print { body { padding: 20px; background: white; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>💰 FinTrack - Relatório Financeiro</h1>
+            <p>Gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
           </div>
-          <div class="summary-item">
-            <span><strong>A Receber:</strong></span>
-            <span>${formatCurrency(totals.entradasPendentes)}</span>
+          <div class="summary">
+            <h2>📊 Resumo Financeiro</h2>
+            <div class="summary-item">
+              <span><strong>Entradas Recebidas:</strong></span>
+              <span>${formatCurrency(totals.entradas)}</span>
+            </div>
+            <div class="summary-item">
+              <span><strong>A Receber:</strong></span>
+              <span>${formatCurrency(totals.entradasPendentes)}</span>
+            </div>
+            <div class="summary-item">
+              <span><strong>A Pagar:</strong></span>
+              <span>${formatCurrency(totals.dividasPendentes)}</span>
+            </div>
+            <div class="summary-item">
+              <span><strong>Despesas Pagas:</strong></span>
+              <span>${formatCurrency(totals.dividasPagas)}</span>
+            </div>
+            <div class="summary-item" style="border-top: 2px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">
+              <span><strong>Saldo:</strong></span>
+              <span style="font-size: 20px; font-weight: bold;">${formatCurrency(totals.saldo)}</span>
+            </div>
           </div>
-          <div class="summary-item">
-            <span><strong>A Pagar:</strong></span>
-            <span>${formatCurrency(totals.dividasPendentes)}</span>
-          </div>
-          <div class="summary-item">
-            <span><strong>Despesas Pagas:</strong></span>
-            <span>${formatCurrency(totals.dividasPagas)}</span>
-          </div>
-        </div>
-        <script>
-          window.onload = function() { window.print(); }
-        </script>
-      </body>
-      </html>
-    `;
-    printWindow.document.write(html);
-    printWindow.document.close();
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+        </html>
+      `;
+      printWindow.document.write(html);
+      printWindow.document.close();
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      alert('Erro ao exportar PDF.');
+    }
   };
 
   const exportBackup = () => {
-    const backup = { transactions: transactions.filter(t => !t.deleted), monthlyGoal, customCategories, currency, sharedUsers, exportDate: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `fintrack-backup-${format(new Date(), 'yyyy-MM-dd')}.json`;
-    a.click();
+    try {
+      const backup = {
+        transactions: transactions.filter(t => !t.deleted),
+        monthlyGoal,
+        customCategories,
+        currency,
+        sharedUsers,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fintrack-backup-${format(new Date(), 'yyyy-MM-dd')}.json`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erro ao exportar backup:', error);
+      alert('Erro ao exportar backup.');
+    }
   };
 
   const importBackup = (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
         const backup = JSON.parse(e.target.result);
-        if (window.confirm('Isso irá substituir todos os seus dados atuais. Deseja continuar?')) {
+
+        if (!backup.transactions || !Array.isArray(backup.transactions)) {
+          throw new Error('Arquivo de backup inválido');
+        }
+
+        if (window.confirm(`Isso irá substituir todos os seus dados atuais. Deseja continuar?\n\nTransações no backup: ${backup.transactions.length}`)) {
           for (const transaction of backup.transactions) {
             await saveTransaction(transaction);
           }
-          setMonthlyGoal(backup.monthlyGoal || 1000);
-          setCustomCategories(backup.customCategories || { entrada: [], divida: [] });
-          setCurrency(backup.currency || 'BRL');
+
+          if (backup.monthlyGoal) setMonthlyGoal(backup.monthlyGoal);
+          if (backup.customCategories) setCustomCategories(backup.customCategories);
+          if (backup.currency) setCurrency(backup.currency);
           if (backup.sharedUsers) setSharedUsers(backup.sharedUsers);
-          alert('Backup importado com sucesso!');
+
+          alert('✅ Backup importado com sucesso!');
         }
       } catch (error) {
-        alert('Erro ao importar backup. Verifique se o arquivo está correto.');
+        console.error('Erro ao importar backup:', error);
+        alert('❌ Erro ao importar backup. Verifique se o arquivo está correto.');
       }
     };
     reader.readAsText(file);
@@ -546,11 +672,11 @@ const FinTrack = () => {
 
   const totals = calculateTotals();
   const filteredTotals = calculateTotals(true);
-  const expensesByCategory = getExpensesByCategory();
-  const incomeByCategory = getIncomeByCategory();
-  const monthlyEvolution = getMonthlyEvolution();
-  const categoryTrends = getCategoryTrends();
-  const upcomingBills = getUpcomingBills();
+  const expensesByCategory = getExpensesByCategory;
+  const incomeByCategory = getIncomeByCategory;
+  const monthlyEvolution = getMonthlyEvolution;
+  const categoryTrends = getCategoryTrends;
+  const upcomingBills = getUpcomingBills;
   const savingsProgress = ((filteredTotals.saldo / monthlyGoal) * 100).toFixed(1);
   const bgClass = darkMode ? 'bg-gray-900' : 'bg-gray-50';
   const cardClass = darkMode ? 'bg-gray-800 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-200';
@@ -558,7 +684,6 @@ const FinTrack = () => {
 
   return (
     <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
-      {/* Header */}
       <div className={`${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b border-gray-200'} shadow-sm p-3 md:p-4 sticky top-0 z-10 backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2 md:gap-3">
@@ -606,7 +731,6 @@ const FinTrack = () => {
       <div className="max-w-7xl mx-auto p-3 md:p-4 pb-24">
         {activeTab === 'dashboard' && (
           <div className="space-y-4 md:space-y-6">
-            {/* Filtro de mês */}
             <div className={`${cardClass} p-3 md:p-4 rounded-xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3`}>
               <div className="flex items-center gap-2">
                 <Calendar size={18} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
@@ -615,7 +739,6 @@ const FinTrack = () => {
               <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`w-full sm:w-auto p-2 border rounded-lg font-medium text-sm md:text-base ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
             </div>
 
-            {/* Cards resumo */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <div className="flex flex-col gap-2">
@@ -673,7 +796,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Meta de economia */}
             <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
               <div className="flex items-center gap-2 mb-4">
                 <Target className={darkMode ? 'text-gray-400' : 'text-gray-600'} size={20} />
@@ -691,9 +813,7 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Gráficos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-              {/* Despesas por categoria */}
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-lg md:text-xl font-bold mb-4">Despesas por Categoria</h2>
                 {expensesByCategory.length > 0 ? (
@@ -710,7 +830,6 @@ const FinTrack = () => {
                 )}
               </div>
 
-              {/* Entradas por categoria */}
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-lg md:text-xl font-bold mb-4">Entradas por Categoria</h2>
                 {incomeByCategory.length > 0 ? (
@@ -727,27 +846,33 @@ const FinTrack = () => {
                 )}
               </div>
 
-              {/* Próximas contas */}
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-lg md:text-xl font-bold mb-4">Próximas Contas</h2>
                 <div className="space-y-3">
-                  {upcomingBills.map(bill => (
-                    <div key={bill.id} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{bill.description}</p>
-                        <p className={`text-xs md:text-sm ${textClass}`}>{bill.category}</p>
-                      </div>
-                      <div className="text-right ml-2">
-                        <p className="font-bold text-red-500 text-sm md:text-base">{formatCurrency(bill.value)}</p>
-                        <p className={`text-xs ${textClass}`}>{format(parseISO(bill.date), 'dd/MM/yyyy')}</p>
-                      </div>
-                    </div>
-                  ))}
+                  {upcomingBills.map(bill => {
+                    try {
+                      const billDate = parseISO(bill.date);
+                      return (
+                        <div key={bill.id} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">{bill.description}</p>
+                            <p className={`text-xs md:text-sm ${textClass}`}>{bill.category}</p>
+                          </div>
+                          <div className="text-right ml-2">
+                            <p className="font-bold text-red-500 text-sm md:text-base">{formatCurrency(bill.value)}</p>
+                            <p className={`text-xs ${textClass}`}>{isValid(billDate) ? format(billDate, 'dd/MM/yyyy') : 'Data inválida'}</p>
+                          </div>
+                        </div>
+                      );
+                    } catch (error) {
+                      console.error('Erro ao renderizar conta:', error);
+                      return null;
+                    }
+                  })}
                   {upcomingBills.length === 0 && <p className={textClass}>Nenhuma conta pendente</p>}
                 </div>
               </div>
 
-              {/* Tendência de categorias */}
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-lg md:text-xl font-bold mb-4">Tendência de Despesas</h2>
                 {categoryTrends.length > 0 && categoryTrends.some(m => Object.keys(m).length > 1) ? (
@@ -769,7 +894,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Evolução anual */}
             <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
               <h2 className="text-lg md:text-xl font-bold mb-4">Evolução Anual (Últimos 12 Meses)</h2>
               <ResponsiveContainer width="100%" height={300}>
@@ -844,13 +968,24 @@ const FinTrack = () => {
             <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
               <h3 className="text-lg md:text-xl font-bold mb-4">Todas as Transações</h3>
               <div className="space-y-2">
-                {groupTransactions(transactions.filter(t => !t.deleted).sort((a, b) => new Date(a.date) - new Date(b.date)))
-                  .map((group) => {
-                    if (!group.isGroup) {
-                      const t = group.transactions[0];
+                {groupTransactions(
+                  transactions
+                    .filter(t => !t.deleted)
+                    .sort((a, b) => {
+                      try {
+                        return new Date(a.date) - new Date(b.date);
+                      } catch (error) {
+                        return 0;
+                      }
+                    })
+                ).map((group) => {
+                  if (!group.isGroup) {
+                    const t = group.transactions[0];
+
+                    try {
                       const today = new Date();
-                      const dueDate = new Date(t.date);
-                      const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                      const dueDate = parseISO(t.date);
+                      const daysUntil = isValid(dueDate) ? Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24)) : null;
 
                       return (
                         <div key={t.id} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
@@ -859,13 +994,13 @@ const FinTrack = () => {
                             <div className="flex items-center gap-2 flex-wrap text-xs md:text-sm">
                               <p className={textClass}>{t.category}</p>
                               <span className={`${textClass} hidden sm:inline`}>•</span>
-                              <p className={textClass}>{format(parseISO(t.date), 'dd/MM/yyyy')}</p>
-                              {t.type === 'divida' && t.status === 'pendente' && daysUntil >= 0 && daysUntil <= 7 && (
+                              <p className={textClass}>{isValid(dueDate) ? format(dueDate, 'dd/MM/yyyy') : 'Data inválida'}</p>
+                              {t.type === 'divida' && t.status === 'pendente' && daysUntil !== null && daysUntil >= 0 && daysUntil <= 7 && (
                                 <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
                                   Vence em {daysUntil}d
                                 </span>
                               )}
-                              {t.type === 'divida' && t.status === 'pendente' && daysUntil < 0 && (
+                              {t.type === 'divida' && t.status === 'pendente' && daysUntil !== null && daysUntil < 0 && (
                                 <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold animate-pulse">
                                   ATRASADO {Math.abs(daysUntil)}d
                                 </span>
@@ -892,62 +1027,67 @@ const FinTrack = () => {
                           </div>
                         </div>
                       );
-                    } else {
-                      const totalValue = group.transactions.reduce((sum, t) => sum + t.value, 0);
-                      const totalInstallments = group.transactions.length;
-                      const pendingCount = group.transactions.filter(t => t.status === 'pendente').length;
-                      const paidCount = group.transactions.filter(t => t.status === 'paga' || t.status === 'recebido').length;
-                      const isExpanded = expandedGroups[group.name];
-                      const firstTransaction = group.transactions[0];
+                    } catch (error) {
+                      console.error('Erro ao renderizar transação:', error);
+                      return null;
+                    }
+                  } else {
+                    const totalValue = group.transactions.reduce((sum, t) => sum + t.value, 0);
+                    const totalInstallments = group.transactions.length;
+                    const pendingCount = group.transactions.filter(t => t.status === 'pendente').length;
+                    const paidCount = group.transactions.filter(t => t.status === 'paga' || t.status === 'recebido').length;
+                    const isExpanded = expandedGroups[group.name];
+                    const firstTransaction = group.transactions[0];
 
-                      return (
-                        <div key={group.name} className={`rounded-lg overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-3 cursor-pointer hover:bg-opacity-90 transition" onClick={() => toggleGroupExpansion(group.name)}>
-                            <div className="flex-1 min-w-0 w-full">
-                              <div className="flex items-start gap-2">
-                                <span className="text-xl flex-shrink-0">📦</span>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-bold text-base md:text-lg truncate">{group.name}</p>
-                                  <div className="flex items-center gap-2 flex-wrap text-xs md:text-sm">
-                                    <span className={`px-2 py-0.5 rounded-full font-semibold ${darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-700'}`}>
-                                      {totalInstallments}x
+                    return (
+                      <div key={group.name} className={`rounded-lg overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-3 cursor-pointer hover:bg-opacity-90 transition" onClick={() => toggleGroupExpansion(group.name)}>
+                          <div className="flex-1 min-w-0 w-full">
+                            <div className="flex items-start gap-2">
+                              <span className="text-xl flex-shrink-0">📦</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-base md:text-lg truncate">{group.name}</p>
+                                <div className="flex items-center gap-2 flex-wrap text-xs md:text-sm">
+                                  <span className={`px-2 py-0.5 rounded-full font-semibold ${darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-700'}`}>
+                                    {totalInstallments}x
+                                  </span>
+                                  <span className={textClass}>{firstTransaction.category}</span>
+                                  {pendingCount > 0 && (
+                                    <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+                                      {pendingCount} pendente{pendingCount > 1 ? 's' : ''}
                                     </span>
-                                    <span className={textClass}>{firstTransaction.category}</span>
-                                    {pendingCount > 0 && (
-                                      <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
-                                        {pendingCount} pendente{pendingCount > 1 ? 's' : ''}
-                                      </span>
-                                    )}
-                                    {paidCount > 0 && (
-                                      <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
-                                        {paidCount} paga{paidCount > 1 ? 's' : ''}
-                                      </span>
-                                    )}
-                                  </div>
+                                  )}
+                                  {paidCount > 0 && (
+                                    <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+                                      {paidCount} paga{paidCount > 1 ? 's' : ''}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                              <div className="text-right">
-                                <p className={`font-bold text-sm md:text-base ${firstTransaction.type === 'entrada' ? 'text-green-500' : 'text-red-500'}`}>
-                                  {firstTransaction.type === 'entrada' ? '+' : '-'} {formatCurrency(totalValue)}
-                                </p>
-                                <p className={`text-xs ${textClass}`}>Total</p>
-                              </div>
-                              <button className={`p-2 rounded-lg transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="6 9 12 15 18 9"></polyline>
-                                </svg>
-                              </button>
-                            </div>
                           </div>
+                          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                            <div className="text-right">
+                              <p className={`font-bold text-sm md:text-base ${firstTransaction.type === 'entrada' ? 'text-green-500' : 'text-red-500'}`}>
+                                {firstTransaction.type === 'entrada' ? '+' : '-'} {formatCurrency(totalValue)}
+                              </p>
+                              <p className={`text-xs ${textClass}`}>Total</p>
+                            </div>
+                            <button className={`p-2 rounded-lg transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
 
-                          {isExpanded && (
-                            <div className={`border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'} p-3 space-y-2 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                              {group.transactions.map((t) => {
+                        {isExpanded && (
+                          <div className={`border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'} p-3 space-y-2 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                            {group.transactions.map((t) => {
+                              try {
                                 const today = new Date();
-                                const dueDate = new Date(t.date);
-                                const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                                const dueDate = parseISO(t.date);
+                                const daysUntil = isValid(dueDate) ? Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24)) : null;
                                 const installmentMatch = t.description.match(/\((\d+)\/(\d+)\)/);
                                 const currentInstallment = installmentMatch ? installmentMatch[1] : '';
                                 const totalInstallments = installmentMatch ? installmentMatch[2] : '';
@@ -959,8 +1099,8 @@ const FinTrack = () => {
                                         <span className={`text-xs px-2 py-1 rounded font-bold ${darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-300 text-gray-700'}`}>
                                           {currentInstallment}/{totalInstallments}
                                         </span>
-                                        <p className={textClass}>{format(parseISO(t.date), 'dd/MM')}</p>
-                                        {t.type === 'divida' && t.status === 'pendente' && daysUntil >= 0 && daysUntil <= 7 && (
+                                        <p className={textClass}>{isValid(dueDate) ? format(dueDate, 'dd/MM') : 'Data inválida'}</p>
+                                        {t.type === 'divida' && t.status === 'pendente' && daysUntil !== null && daysUntil >= 0 && daysUntil <= 7 && (
                                           <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
                                             {daysUntil}d
                                           </span>
@@ -987,13 +1127,17 @@ const FinTrack = () => {
                                     </div>
                                   </div>
                                 );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-                  })}
+                              } catch (error) {
+                                console.error('Erro ao renderizar parcela:', error);
+                                return null;
+                              }
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                })}
               </div>
             </div>
           </div>
@@ -1006,8 +1150,7 @@ const FinTrack = () => {
             <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
               <h3 className="text-base md:text-lg font-bold mb-4">Meta Mensal de Economia</h3>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <input type="number" value={monthlyGoal} onChange={(e) => setMonthlyGoal(parseFloat(e.target.value))} className={`flex-1 p-3 border rounded-lg font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
-                <button onClick={saveSettings} className={`px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>Salvar</button>
+                <input type="number" value={monthlyGoal} onChange={(e) => setMonthlyGoal(parseFloat(e.target.value) || 0)} className={`flex-1 p-3 border rounded-lg font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
               </div>
             </div>
 
@@ -1116,7 +1259,6 @@ const FinTrack = () => {
         )}
       </div>
 
-      {/* Modal nova transação */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-2xl p-4 md:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl`}>
@@ -1126,7 +1268,7 @@ const FinTrack = () => {
               <button onClick={() => setTransactionType('divida')} className={`flex-1 py-2 rounded-lg font-medium transition-colors text-sm md:text-base ${transactionType === 'divida' ? 'bg-red-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>Saída</button>
             </div>
             <div className="space-y-4">
-              <input type="number" step="0.01" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} className={`w-full p-3 border rounded-lg text-sm md:text-base ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Valor" />
+              <input type="number" step="0.01" min="0.01" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} className={`w-full p-3 border rounded-lg text-sm md:text-base ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Valor" />
               <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className={`w-full p-3 border rounded-lg text-sm md:text-base ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
               <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className={`w-full p-3 border rounded-lg text-sm md:text-base ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
                 <option value="">Selecione a categoria</option>
@@ -1159,7 +1301,6 @@ const FinTrack = () => {
         </div>
       )}
 
-      {/* Modal compartilhar */}
       {showShareModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-2xl p-4 md:p-6 max-w-md w-full shadow-2xl`}>
@@ -1181,7 +1322,6 @@ const FinTrack = () => {
         </div>
       )}
 
-      {/* Modal categoria */}
       {showCategoryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-2xl p-4 md:p-6 max-w-md w-full shadow-2xl`}>
@@ -1201,7 +1341,6 @@ const FinTrack = () => {
         </div>
       )}
 
-      {/* Bottom navigation */}
       <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg border-t backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-7xl mx-auto flex justify-around items-center p-2 md:p-4">
           <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'dashboard' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>

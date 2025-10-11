@@ -879,8 +879,8 @@ const FinTrack = () => {
                               </p>
                               {(t.type === 'divida' || t.type === 'entrada') && (
                                 <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${(t.status === 'paga' || t.status === 'recebido')
-                                    ? 'bg-green-500 text-white hover:bg-green-600'
-                                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                                  ? 'bg-green-500 text-white hover:bg-green-600'
+                                  : 'bg-orange-500 text-white hover:bg-orange-600'
                                   }`}>
                                   {t.status === 'paga' ? '✓ Paga' : t.status === 'recebido' ? '✓ Recebido' : '⏱ Pendente'}
                                 </button>
@@ -974,8 +974,8 @@ const FinTrack = () => {
                                         </p>
                                         {(t.type === 'divida' || t.type === 'entrada') && (
                                           <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${(t.status === 'paga' || t.status === 'recebido')
-                                              ? 'bg-green-500 text-white hover:bg-green-600'
-                                              : 'bg-orange-500 text-white hover:bg-orange-600'
+                                            ? 'bg-green-500 text-white hover:bg-green-600'
+                                            : 'bg-orange-500 text-white hover:bg-orange-600'
                                             }`}>
                                             {t.status === 'paga' ? '✓' : t.status === 'recebido' ? '✓' : '⏱'}
                                           </button>
@@ -1123,7 +1123,7 @@ const FinTrack = () => {
             <h2 className="text-xl md:text-2xl font-bold mb-4">Nova Transação</h2>
             <div className="flex gap-2 mb-4">
               <button onClick={() => setTransactionType('entrada')} className={`flex-1 py-2 rounded-lg font-medium transition-colors text-sm md:text-base ${transactionType === 'entrada' ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>Entrada</button>
-              <button onClick={() => setTransactionType('divida')} className={`flex-1 py-2 rounded-lg font-medium transition-colors text-sm md:text-base ${transactionType === 'divida' ? 'bg-red-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>Dívida</button>
+              <button onClick={() => setTransactionType('divida')} className={`flex-1 py-2 rounded-lg font-medium transition-colors text-sm md:text-base ${transactionType === 'divida' ? 'bg-red-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>Saída</button>
             </div>
             <div className="space-y-4">
               <input type="number" step="0.01" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} className={`w-full p-3 border rounded-lg text-sm md:text-base ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Valor" />

@@ -36,6 +36,28 @@ const FinTrack = () => {
   const [newCategory, setNewCategory] = useState({ name: '', type: 'divida' });
   const [expandedGroups, setExpandedGroups] = useState({});
 
+  // Função para formatar o valor do input (aceita vírgula e ponto)
+  const handleValueChange = (value) => {
+    // Remove tudo exceto números, vírgula e ponto
+    let formatted = value.replace(/[^\d,\.]/g, '');
+
+    // Substitui vírgula por ponto
+    formatted = formatted.replace(',', '.');
+
+    // Garante apenas um ponto decimal
+    const parts = formatted.split('.');
+    if (parts.length > 2) {
+      formatted = parts[0] + '.' + parts.slice(1).join('');
+    }
+
+    // Limita a 2 casas decimais
+    if (parts[1] && parts[1].length > 2) {
+      formatted = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+
+    return formatted;
+  };
+
   const defaultCategories = {
     entrada: ['Salário', 'Freelance', 'Investimentos', 'Recebimento', 'Outros'],
     divida: ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Contas', 'Outros']
@@ -321,56 +343,98 @@ const FinTrack = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.value || !formData.date || !formData.category || !formData.description) {
-      alert('Por favor, preencha todos os campos');
+    // Converter vírgula para ponto antes de validar
+    const valorFormatado = formData.value?.toString().replace(',', '.').trim();
+    const valorNumerico = parseFloat(valorFormatado);
+
+    const data = formData.date?.trim();
+    const categoria = formData.category?.trim();
+    const descricao = formData.description?.trim();
+
+    console.log('🔍 DEBUG - Validação:', {
+      valorOriginal: formData.value,
+      valorFormatado,
+      valorNumerico,
+      data,
+      categoria,
+      descricao
+    });
+
+    // Verificar campos vazios
+    const camposVazios = [];
+    if (!valorFormatado || isNaN(valorNumerico) || valorNumerico <= 0) camposVazios.push('Valor (digite um número válido)');
+    if (!data) camposVazios.push('Data');
+    if (!categoria) camposVazios.push('Categoria');
+    if (!descricao) camposVazios.push('Descrição');
+
+    if (camposVazios.length > 0) {
+      alert(`❌ Campos obrigatórios não preenchidos:\n\n${camposVazios.map(c => `• ${c}`).join('\n')}`);
+      console.error('❌ Campos vazios:', camposVazios);
       return;
     }
 
-    if (formData.installments > 1) {
-      const installmentValue = parseFloat(formData.value) / parseInt(formData.installments);
-      const newTransactions = [];
+    try {
+      if (formData.installments > 1) {
+        const installmentValue = valorNumerico / parseInt(formData.installments);
 
-      for (let i = 0; i < formData.installments; i++) {
-        const installmentDate = new Date(formData.date);
-        installmentDate.setMonth(installmentDate.getMonth() + i);
+        for (let i = 0; i < formData.installments; i++) {
+          const installmentDate = new Date(formData.date);
+          installmentDate.setMonth(installmentDate.getMonth() + i);
 
-        const targetDay = new Date(formData.date).getDate();
-        const lastDayOfMonth = new Date(installmentDate.getFullYear(), installmentDate.getMonth() + 1, 0).getDate();
-        installmentDate.setDate(Math.min(targetDay, lastDayOfMonth));
+          const targetDay = new Date(formData.date).getDate();
+          const lastDayOfMonth = new Date(installmentDate.getFullYear(), installmentDate.getMonth() + 1, 0).getDate();
+          installmentDate.setDate(Math.min(targetDay, lastDayOfMonth));
 
+          const transaction = {
+            id: `${Date.now()}-${i}-${Math.random()}`,
+            type: transactionType,
+            value: installmentValue,
+            date: installmentDate.toISOString().split('T')[0],
+            category: categoria,
+            description: `${descricao} (${i + 1}/${formData.installments})`,
+            status: 'pendente',
+            recurrent: formData.recurrent,
+            createdAt: new Date().toISOString()
+          };
+
+          console.log(`💾 Salvando parcela ${i + 1}/${formData.installments}...`);
+          await saveTransaction(transaction);
+        }
+        alert(`✅ ${formData.installments} parcelas adicionadas com sucesso!`);
+      } else {
         const transaction = {
-          id: `${Date.now()}-${i}-${Math.random()}`,
+          id: `${Date.now()}-${Math.random()}`,
           type: transactionType,
-          value: installmentValue,
-          date: installmentDate.toISOString().split('T')[0],
-          category: formData.category,
-          description: `${formData.description} (${i + 1}/${formData.installments})`,
-          status: 'pendente',
+          value: valorNumerico,
+          date: data,
+          category: categoria,
+          description: descricao,
+          status: formData.status,
           recurrent: formData.recurrent,
           createdAt: new Date().toISOString()
         };
 
-        newTransactions.push(transaction);
+        console.log('💾 Salvando transação única...');
         await saveTransaction(transaction);
+        alert('✅ Transação adicionada com sucesso!');
       }
-    } else {
-      const transaction = {
-        id: `${Date.now()}-${Math.random()}`,
-        type: transactionType,
-        value: parseFloat(formData.value),
-        date: formData.date,
-        category: formData.category,
-        description: formData.description,
-        status: formData.status,
-        recurrent: formData.recurrent,
-        createdAt: new Date().toISOString()
-      };
 
-      await saveTransaction(transaction);
+      // Limpar formulário e fechar modal
+      setShowModal(false);
+      setFormData({
+        value: '',
+        date: '',
+        category: '',
+        description: '',
+        status: 'pendente',
+        recurrent: false,
+        installments: 1
+      });
+
+    } catch (error) {
+      console.error('❌ Erro ao salvar:', error);
+      alert('❌ Erro ao salvar a transação. Verifique o console.');
     }
-
-    setShowModal(false);
-    setFormData({ value: '', date: '', category: '', description: '', status: 'pendente', recurrent: false, installments: 1 });
   };
 
   const handleAddCategory = () => {
@@ -917,8 +981,8 @@ const FinTrack = () => {
                                 {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}
                               </p>
                               <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${(t.status === 'paga' || t.status === 'recebido')
-                                  ? 'bg-green-500 text-white hover:bg-green-600'
-                                  : 'bg-orange-500 text-white hover:bg-orange-600'
+                                ? 'bg-green-500 text-white hover:bg-green-600'
+                                : 'bg-orange-500 text-white hover:bg-orange-600'
                                 }`}>
                                 {t.status === 'paga' ? '✓ Paga' : t.status === 'recebido' ? '✓ Recebido' : '⏱ Pendente'}
                               </button>
@@ -1011,8 +1075,8 @@ const FinTrack = () => {
                                           {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}
                                         </p>
                                         <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${(t.status === 'paga' || t.status === 'recebido')
-                                            ? 'bg-green-500 text-white hover:bg-green-600'
-                                            : 'bg-orange-500 text-white hover:bg-orange-600'
+                                          ? 'bg-green-500 text-white hover:bg-green-600'
+                                          : 'bg-orange-500 text-white hover:bg-orange-600'
                                           }`}>
                                           {(t.status === 'paga' || t.status === 'recebido') ? '✓' : '⏱'}
                                         </button>
@@ -1168,13 +1232,64 @@ const FinTrack = () => {
               <button onClick={() => setTransactionType('divida')} className={`flex-1 py-2 rounded-lg font-medium transition-colors ${transactionType === 'divida' ? 'bg-red-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>Dívida</button>
             </div>
             <div className="space-y-4">
-              <input type="number" step="0.01" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Valor" />
-              <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
-              <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
-                <option value="">Selecione a categoria</option>
-                {categories[transactionType].map(cat => <option key={cat} value={cat}>{cat}</option>)}
-              </select>
-              <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Descrição" />
+              {/* Valor */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Valor *</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.value}
+                  onChange={(e) => {
+                    const formatted = handleValueChange(e.target.value);
+                    setFormData({ ...formData, value: formatted });
+                  }}
+                  className={`w-full p-3 border-2 rounded-lg ${!formData.value ? 'border-red-500' : darkMode ? 'border-gray-600' : 'border-gray-300'
+                    } ${darkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}
+                  placeholder="0,00 ou 0.00"
+                />
+                <p className="text-xs text-gray-500 mt-1">Use vírgula ou ponto para decimais</p>
+              </div>
+
+              {/* Data */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Data *</label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className={`w-full p-3 border-2 rounded-lg ${!formData.date ? 'border-red-500' : darkMode ? 'border-gray-600' : 'border-gray-300'
+                    } ${darkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}
+                />
+              </div>
+
+              {/* Categoria */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Categoria *</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className={`w-full p-3 border-2 rounded-lg ${!formData.category ? 'border-red-500' : darkMode ? 'border-gray-600' : 'border-gray-300'
+                    } ${darkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}
+                >
+                  <option value="">Selecione a categoria</option>
+                  {categories[transactionType].map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
+              </div>
+
+              {/* Descrição */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Descrição *</label>
+                <input
+                  type="text"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className={`w-full p-3 border-2 rounded-lg ${!formData.description ? 'border-red-500' : darkMode ? 'border-gray-600' : 'border-gray-300'
+                    } ${darkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}
+                  placeholder="Ex: Salário de outubro"
+                />
+              </div>
+
+              {/* Status */}
               {transactionType === 'divida' && (
                 <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
                   <option value="pendente">Pendente</option>
@@ -1187,12 +1302,18 @@ const FinTrack = () => {
                   <option value="recebido">Recebido</option>
                 </select>
               )}
+
+              {/* Parcelas */}
               <input type="number" min="1" value={formData.installments} onChange={(e) => setFormData({ ...formData, installments: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Número de parcelas" />
+
+              {/* Recorrente */}
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={formData.recurrent} onChange={(e) => setFormData({ ...formData, recurrent: e.target.checked })} className="w-5 h-5" />
                 <span>Transação recorrente</span>
               </label>
-              <div className="flex gap-2">
+
+              {/* Botões */}
+              <div className="flex gap-2 pt-2">
                 <button onClick={() => setShowModal(false)} className={`flex-1 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'}`}>Cancelar</button>
                 <button onClick={handleSubmit} className={`flex-1 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>Salvar</button>
               </div>

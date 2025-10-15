@@ -1,3 +1,242 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ==============================================
+   OTIMIZAÇÕES RESPONSIVAS PERSONALIZADAS
+   ============================================== */
+
+/* Mobile First - < 640px */
+@media (max-width: 639px) {
+
+    /* Melhorar scrolling no mobile */
+    * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+    }
+
+    /* Otimizar inputs no mobile */
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="email"],
+    input[type="password"],
+    select {
+        font-size: 16px !important;
+        /* Evita zoom automático no iOS */
+    }
+
+    /* Melhorar botões touchscreen */
+    button {
+        min-height: 44px;
+        /* Tamanho mínimo recomendado para toque */
+    }
+
+    /* Otimizar gráficos no mobile */
+    .recharts-wrapper {
+        font-size: 10px;
+    }
+
+    /* Compactar espaçamentos */
+    body {
+        font-size: 14px;
+    }
+}
+
+/* Tablet - 640px to 1024px */
+@media (min-width: 640px) and (max-width: 1023px) {
+
+    /* Otimizar para telas médias */
+    body {
+        font-size: 15px;
+    }
+
+    /* Ajustar gráficos */
+    .recharts-wrapper {
+        font-size: 12px;
+    }
+
+    /* Melhorar cards */
+    .rounded-xl {
+        border-radius: 0.75rem;
+    }
+}
+
+/* Desktop - >= 1024px */
+@media (min-width: 1024px) {
+
+    /* Melhorar legibilidade */
+    body {
+        font-size: 16px;
+    }
+
+    /* Otimizar hover states */
+    button:hover,
+    a:hover {
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+
+    /* Melhorar shadows em desktop */
+    .shadow-lg {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* ==============================================
+   OTIMIZAÇÕES DE PERFORMANCE
+   ============================================== */
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Otimizar animações */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Melhorar renderização de fontes */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* ==============================================
+   CORREÇÕES ESPECÍFICAS
+   ============================================== */
+
+/* Prevenir overflow horizontal */
+body,
+html {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+/* Melhorar focus states */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Dark mode otimizado */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #111827;
+    }
+}
+
+/* ==============================================
+   UTILITÁRIOS CUSTOMIZADOS
+   ============================================== */
+
+/* Truncate text responsivo */
+.truncate-responsive {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+    .truncate-responsive {
+        max-width: 150px;
+    }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+    .truncate-responsive {
+        max-width: 200px;
+    }
+}
+
+/* Container responsivo otimizado */
+.container-custom {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+@media (min-width: 640px) {
+    .container-custom {
+        max-width: 640px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .container-custom {
+        max-width: 768px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .container-custom {
+        max-width: 1024px;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+
+@media (min-width: 1280px) {
+    .container-custom {
+        max-width: 1280px;
+    }
+}
+
+/* ==============================================
+   ANIMAÇÕES OTIMIZADAS
+   ============================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Skeleton loading para melhor UX */
+@keyframes skeleton-loading {
+    0% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0 50%;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+/* Dark mode skeleton */
+.dark .skeleton {
+    background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+    background-size: 200% 100%;
+}

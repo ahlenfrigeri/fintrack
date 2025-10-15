@@ -549,7 +549,7 @@ const FinTrack = () => {
           .summary-item strong { color: #1f2937; }
           .total { font-size: 18px; font-weight: bold; border-top: 2px solid #374151; padding-top: 12px; margin-top: 12px; }
           .entrada { color: #10b981; font-weight: 600; }
-          .divida { color: #ef4444; font-weight: 600; }
+          .divida { color: #8b5cf6; font-weight: 600; }
           @media print { body { padding: 20px; background: white; } }
         </style>
       </head>
@@ -658,28 +658,28 @@ const FinTrack = () => {
   return (
     <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
       {/* Header responsivo */}
-      <div className={`${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b border-gray-200'} shadow-sm p-3 md:p-4 sticky top-0 z-10 backdrop-blur-sm bg-opacity-95`}>
+      <div className={`${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b border-gray-200'} shadow-sm p-2 sm:p-3 lg:p-4 sticky top-0 z-10 backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2 md:gap-3">
-            <img src="/logo.png" alt="FinTrack" className="w-8 h-8 md:w-10 md:h-10" />
-            <h1 className={`text-lg md:text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>FinTrack</h1>
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3">
+            <img src="/logo.png" alt="FinTrack" className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
+            <h1 className={`text-base sm:text-lg lg:text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>FinTrack</h1>
           </div>
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
             {/* Notificações */}
             <div className="relative">
-              <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
-                <Bell size={20} className={darkMode ? 'text-gray-300' : 'text-gray-600'} />
+              <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-1.5 sm:p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                <Bell size={18} className={`sm:w-5 sm:h-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`} />
                 {notifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">{notifications.length}</span>
+                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center font-semibold">{notifications.length}</span>
                 )}
               </button>
               {showNotifications && notifications.length > 0 && (
-                <div className={`absolute right-0 mt-2 w-72 md:w-80 ${cardClass} rounded-xl shadow-2xl p-4 max-h-96 overflow-y-auto`}>
-                  <h3 className="font-bold mb-3 text-lg">🔔 Notificações</h3>
+                <div className={`absolute right-0 mt-2 w-[280px] sm:w-72 lg:w-80 ${cardClass} rounded-xl shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-96 overflow-y-auto`}>
+                  <h3 className="font-bold mb-2 sm:mb-3 text-base sm:text-lg">🔔 Notificações</h3>
                   {notifications.map(n => (
-                    <div key={n.id} className={`p-3 mb-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                      <p className="text-sm">{n.message}</p>
-                      <p className="text-xs text-orange-500 font-semibold mt-1">{formatCurrency(n.value)}</p>
+                    <div key={n.id} className={`p-2 sm:p-3 mb-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                      <p className="text-xs sm:text-sm">{n.message}</p>
+                      <p className="text-[10px] sm:text-xs text-orange-500 font-semibold mt-1">{formatCurrency(n.value)}</p>
                     </div>
                   ))}
                 </div>
@@ -687,146 +687,146 @@ const FinTrack = () => {
             </div>
 
             {/* User info - oculto em mobile */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2">
               <User size={18} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
               <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{currentUser.email}</span>
             </div>
 
             {/* Dark mode toggle */}
-            <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-lg transition-all ${darkMode ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            <button onClick={() => setDarkMode(!darkMode)} className={`p-1.5 sm:p-2 rounded-lg transition-all ${darkMode ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              {darkMode ? <Sun size={18} className="sm:w-5 sm:h-5" /> : <Moon size={18} className="sm:w-5 sm:h-5" />}
             </button>
 
             {/* Logout */}
-            <button onClick={handleLogout} className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg font-medium transition-all ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>
-              <LogOut size={18} />
-              <span className="hidden md:inline">Sair</span>
+            <button onClick={handleLogout} className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>
+              <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span className="hidden sm:inline">Sair</span>
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-3 md:p-4 pb-24">
+      <div className="max-w-7xl mx-auto p-2 sm:p-3 lg:p-4 pb-20 sm:pb-24">
         {activeTab === 'dashboard' && (
-          <div className="space-y-4 md:space-y-6">
+          <div className="space-y-3 sm:space-y-4 lg:space-y-6">
             {/* Filtro de mês responsivo */}
-            <div className={`${cardClass} p-3 md:p-4 rounded-xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3`}>
-              <div className="flex items-center gap-2">
-                <Calendar size={20} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
-                <span className="font-semibold text-sm md:text-base">Filtrar por mês:</span>
+            <div className={`${cardClass} p-2.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3`}>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Calendar size={16} className={`sm:w-5 sm:h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                <span className="font-semibold text-xs sm:text-sm lg:text-base">Filtrar por mês:</span>
               </div>
-              <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`w-full sm:w-auto p-2 border rounded-lg font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
+              <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`w-full sm:w-auto p-1.5 sm:p-2 border rounded-lg text-xs sm:text-sm font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
             </div>
 
             {/* Cards resumo - Grid responsivo */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
-              <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-                <div className="flex flex-col gap-2">
-                  <p className={`text-xs md:text-sm font-medium ${textClass}`}>Entradas Recebidas</p>
-                  <p className="text-lg md:text-2xl font-bold text-green-500">{formatCurrency(filteredTotals.entradas)}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <TrendingUp className="text-green-600" size={16} />
-                    <span className="text-xs text-green-600">Mês atual</span>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+                <div className="flex flex-col gap-1 sm:gap-2">
+                  <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>Entradas Recebidas</p>
+                  <p className="text-sm sm:text-lg lg:text-2xl font-bold text-green-500">{formatCurrency(filteredTotals.entradas)}</p>
+                  <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
+                    <TrendingUp className="text-green-600" size={12} />
+                    <span className="text-[9px] sm:text-xs text-green-600">Mês atual</span>
                   </div>
                 </div>
               </div>
 
-              <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-                <div className="flex flex-col gap-2">
-                  <p className={`text-xs md:text-sm font-medium ${textClass}`}>A Receber</p>
-                  <p className="text-lg md:text-2xl font-bold text-blue-500">{formatCurrency(filteredTotals.entradasPendentes)}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Clock className="text-blue-600" size={16} />
-                    <span className="text-xs text-blue-600">Pendente</span>
+              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+                <div className="flex flex-col gap-1 sm:gap-2">
+                  <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>A Receber</p>
+                  <p className="text-sm sm:text-lg lg:text-2xl font-bold text-blue-500">{formatCurrency(filteredTotals.entradasPendentes)}</p>
+                  <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
+                    <Clock className="text-blue-600" size={12} />
+                    <span className="text-[9px] sm:text-xs text-blue-600">Pendente</span>
                   </div>
                 </div>
               </div>
 
-              <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-                <div className="flex flex-col gap-2">
-                  <p className={`text-xs md:text-sm font-medium ${textClass}`}>A Pagar</p>
-                  <p className="text-lg md:text-2xl font-bold text-orange-500">{formatCurrency(filteredTotals.dividasPendentes)}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <TrendingDown className="text-orange-600" size={16} />
-                    <span className="text-xs text-orange-600">Pendente</span>
+              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+                <div className="flex flex-col gap-1 sm:gap-2">
+                  <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>A Pagar</p>
+                  <p className="text-sm sm:text-lg lg:text-2xl font-bold text-orange-500">{formatCurrency(filteredTotals.dividasPendentes)}</p>
+                  <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
+                    <TrendingDown className="text-orange-600" size={12} />
+                    <span className="text-[9px] sm:text-xs text-orange-600">Pendente</span>
                   </div>
                 </div>
               </div>
 
-              <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-                <div className="flex flex-col gap-2">
-                  <p className={`text-xs md:text-sm font-medium ${textClass}`}>Despesas Pagas</p>
-                  <p className="text-lg md:text-2xl font-bold text-red-500">{formatCurrency(filteredTotals.dividasPagas)}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Check className="text-red-600" size={16} />
-                    <span className="text-xs text-red-600">Mês atual</span>
+              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+                <div className="flex flex-col gap-1 sm:gap-2">
+                  <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>Despesas Pagas</p>
+                  <p className="text-sm sm:text-lg lg:text-2xl font-bold text-purple-500">{formatCurrency(filteredTotals.dividasPagas)}</p>
+                  <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
+                    <Check className="text-purple-600" size={12} />
+                    <span className="text-[9px] sm:text-xs text-purple-600">Mês atual</span>
                   </div>
                 </div>
               </div>
 
-              <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm col-span-2 lg:col-span-1`}>
-                <div className="flex flex-col gap-2">
-                  <p className={`text-xs md:text-sm font-medium ${textClass}`}>Saldo Real</p>
-                  <p className={`text-lg md:text-2xl font-bold ${filteredTotals.saldo >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-500'}`}>{formatCurrency(filteredTotals.saldo)}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <DollarSign className={filteredTotals.saldo >= 0 ? 'text-gray-600' : 'text-red-600'} size={16} />
-                    <span className={`text-xs ${filteredTotals.saldo >= 0 ? 'text-gray-600' : 'text-red-600'}`}>Atual</span>
+              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm col-span-2 sm:col-span-2 lg:col-span-1`}>
+                <div className="flex flex-col gap-1 sm:gap-2">
+                  <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>Saldo Real</p>
+                  <p className={`text-sm sm:text-lg lg:text-2xl font-bold ${filteredTotals.saldo >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-500'}`}>{formatCurrency(filteredTotals.saldo)}</p>
+                  <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
+                    <DollarSign className={filteredTotals.saldo >= 0 ? 'text-gray-600' : 'text-red-600'} size={12} />
+                    <span className={`text-[9px] sm:text-xs ${filteredTotals.saldo >= 0 ? 'text-gray-600' : 'text-red-600'}`}>Atual</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Meta de economia */}
-            <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-              <div className="flex items-center gap-2 mb-4">
-                <Target className={darkMode ? 'text-gray-400' : 'text-gray-600'} size={24} />
-                <h2 className="text-lg md:text-xl font-bold">Meta de Economia Mensal</h2>
+            <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+                <Target className={darkMode ? 'text-gray-400' : 'text-gray-600'} size={20} />
+                <h2 className="text-sm sm:text-base lg:text-xl font-bold">Meta de Economia Mensal</h2>
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-medium">
+              <div className="space-y-1.5 sm:space-y-2">
+                <div className="flex justify-between text-xs sm:text-sm font-medium">
                   <span>Progresso: {formatCurrency(filteredTotals.saldo)}</span>
                   <span>Meta: {formatCurrency(monthlyGoal)}</span>
                 </div>
-                <div className={`w-full rounded-full h-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                  <div className={`h-3 rounded-full transition-all ${savingsProgress >= 100 ? 'bg-green-500' : 'bg-gray-600'}`} style={{ width: `${Math.min(Math.abs(savingsProgress), 100)}%` }}></div>
+                <div className={`w-full rounded-full h-2 sm:h-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                  <div className={`h-2 sm:h-3 rounded-full transition-all ${savingsProgress >= 100 ? 'bg-green-500' : 'bg-gray-600'}`} style={{ width: `${Math.min(Math.abs(savingsProgress), 100)}%` }}></div>
                 </div>
-                <p className={`text-sm text-center font-medium ${textClass}`}>{savingsProgress}% da meta alcançada</p>
+                <p className={`text-xs sm:text-sm text-center font-medium ${textClass}`}>{savingsProgress}% da meta alcançada</p>
               </div>
             </div>
 
             {/* Gráficos - Grid responsivo */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
               {/* Gastos por categoria */}
-              <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-                <h2 className="text-lg md:text-xl font-bold mb-4">Despesas por Categoria</h2>
+              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+                <h2 className="text-sm sm:text-base lg:text-xl font-bold mb-3 sm:mb-4">Despesas por Categoria</h2>
                 {expensesByCategory.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={250}>
+                  <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
                     <PieChart>
-                      <Pie data={expensesByCategory} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
+                      <Pie data={expensesByCategory} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={60} className="sm:outerRadius-[80]" fill="#8884d8" dataKey="value">
                         {expensesByCategory.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                       </Pie>
                       <Tooltip formatter={(value) => formatCurrency(value)} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className={`text-center py-16 ${textClass}`}>Nenhuma despesa neste mês</p>
+                  <p className={`text-center py-12 sm:py-16 text-xs sm:text-sm ${textClass}`}>Nenhuma despesa neste mês</p>
                 )}
               </div>
 
               {/* Entradas por categoria */}
-              <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-                <h2 className="text-lg md:text-xl font-bold mb-4">Entradas por Categoria</h2>
+              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+                <h2 className="text-sm sm:text-base lg:text-xl font-bold mb-3 sm:mb-4">Entradas por Categoria</h2>
                 {incomeByCategory.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={250}>
+                  <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
                     <PieChart>
-                      <Pie data={incomeByCategory} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
+                      <Pie data={incomeByCategory} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={60} className="sm:outerRadius-[80]" fill="#8884d8" dataKey="value">
                         {incomeByCategory.map((entry, index) => <Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b'][index % 5]} />)}
                       </Pie>
                       <Tooltip formatter={(value) => formatCurrency(value)} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className={`text-center py-16 ${textClass}`}>Nenhuma entrada neste mês</p>
+                  <p className={`text-center py-12 sm:py-16 text-xs sm:text-sm ${textClass}`}>Nenhuma entrada neste mês</p>
                 )}
               </div>
 
@@ -902,15 +902,15 @@ const FinTrack = () => {
         )}
 
         {activeTab === 'relatorios' && (
-          <div className="space-y-4 md:space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <h2 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Relatórios</h2>
+          <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3">
+              <h2 className={`text-base sm:text-xl lg:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Relatórios</h2>
               <div className="flex gap-2 w-full sm:w-auto">
-                <button onClick={exportToCSV} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-medium transition-colors">
-                  <Download size={18} />CSV
+                <button onClick={exportToCSV} className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 bg-green-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-green-600 text-xs sm:text-sm font-medium transition-colors">
+                  <Download size={14} className="sm:w-[18px] sm:h-[18px]" />CSV
                 </button>
-                <button onClick={exportToPDF} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium transition-colors">
-                  <FileText size={18} />PDF
+                <button onClick={exportToPDF} className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 bg-red-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-red-600 text-xs sm:text-sm font-medium transition-colors">
+                  <FileText size={14} className="sm:w-[18px] sm:h-[18px]" />PDF
                 </button>
               </div>
             </div>
@@ -923,7 +923,7 @@ const FinTrack = () => {
                   { name: 'Entradas', valor: filteredTotals.entradas, fill: '#10b981' },
                   { name: 'A Receber', valor: filteredTotals.entradasPendentes, fill: '#3b82f6' },
                   { name: 'A Pagar', valor: filteredTotals.dividasPendentes, fill: '#f59e0b' },
-                  { name: 'Pagas', valor: filteredTotals.dividasPagas, fill: '#ef4444' }
+                  { name: 'Pagas', valor: filteredTotals.dividasPagas, fill: '#8b5cf6' }
                 ]}>
                   <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
                   <XAxis dataKey="name" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
@@ -934,7 +934,7 @@ const FinTrack = () => {
                       { name: 'Entradas', valor: filteredTotals.entradas, fill: '#10b981' },
                       { name: 'A Receber', valor: filteredTotals.entradasPendentes, fill: '#3b82f6' },
                       { name: 'A Pagar', valor: filteredTotals.dividasPendentes, fill: '#f59e0b' },
-                      { name: 'Pagas', valor: filteredTotals.dividasPagas, fill: '#ef4444' }
+                      { name: 'Pagas', valor: filteredTotals.dividasPagas, fill: '#8b5cf6' }
                     ].map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
@@ -981,7 +981,7 @@ const FinTrack = () => {
                                 {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}
                               </p>
                               <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${(t.status === 'paga' || t.status === 'recebido')
-                                ? 'bg-green-500 text-white hover:bg-green-600'
+                                ? 'bg-purple-500 text-white hover:bg-purple-600'
                                 : 'bg-orange-500 text-white hover:bg-orange-600'
                                 }`}>
                                 {t.status === 'paga' ? '✓ Paga' : t.status === 'recebido' ? '✓ Recebido' : '⏱ Pendente'}
@@ -1021,7 +1021,7 @@ const FinTrack = () => {
                                       </span>
                                     )}
                                     {paidCount > 0 && (
-                                      <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+                                      <span className="bg-purple-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
                                         {paidCount} paga
                                       </span>
                                     )}
@@ -1075,7 +1075,7 @@ const FinTrack = () => {
                                           {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}
                                         </p>
                                         <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${(t.status === 'paga' || t.status === 'recebido')
-                                          ? 'bg-green-500 text-white hover:bg-green-600'
+                                          ? 'bg-purple-500 text-white hover:bg-purple-600'
                                           : 'bg-orange-500 text-white hover:bg-orange-600'
                                           }`}>
                                           {(t.status === 'paga' || t.status === 'recebido') ? '✓' : '⏱'}
@@ -1100,22 +1100,22 @@ const FinTrack = () => {
         )}
 
         {activeTab === 'configuracoes' && (
-          <div className="space-y-4 md:space-y-6">
-            <h2 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Configurações</h2>
+          <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+            <h2 className={`text-base sm:text-xl lg:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Configurações</h2>
 
             {/* Meta mensal */}
-            <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-              <h3 className="text-lg font-bold mb-4">Meta Mensal de Economia</h3>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input type="number" value={monthlyGoal} onChange={(e) => setMonthlyGoal(parseFloat(e.target.value))} className={`flex-1 p-3 border rounded-lg font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
-                <button onClick={saveSettings} className={`px-6 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>Salvar</button>
+            <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-3 sm:mb-4">Meta Mensal de Economia</h3>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <input type="number" value={monthlyGoal} onChange={(e) => setMonthlyGoal(parseFloat(e.target.value))} className={`flex-1 p-2.5 sm:p-3 border rounded-lg text-sm sm:text-base font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
+                <button onClick={saveSettings} className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>Salvar</button>
               </div>
             </div>
 
             {/* Moeda */}
-            <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-              <h3 className="text-lg font-bold mb-4">Moeda</h3>
-              <select value={currency} onChange={(e) => setCurrency(e.target.value)} className={`w-full p-3 border rounded-lg font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
+            <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-3 sm:mb-4">Moeda</h3>
+              <select value={currency} onChange={(e) => setCurrency(e.target.value)} className={`w-full p-2.5 sm:p-3 border rounded-lg text-sm sm:text-base font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
                 <option value="BRL">Real (R$)</option>
                 <option value="USD">Dólar ($)</option>
                 <option value="EUR">Euro (€)</option>
@@ -1124,68 +1124,68 @@ const FinTrack = () => {
             </div>
 
             {/* Compartilhamento */}
-            <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+            <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <div>
-                  <h3 className="text-lg font-bold flex items-center gap-2">
-                    <Users size={20} />
+                  <h3 className="text-sm sm:text-base lg:text-lg font-bold flex items-center gap-1.5 sm:gap-2">
+                    <Users size={16} className="sm:w-5 sm:h-5" />
                     Compartilhar Gastos
                   </h3>
-                  <p className={`text-sm ${textClass} mt-1`}>Adicione pessoas para compartilhar suas finanças</p>
+                  <p className={`text-xs sm:text-sm ${textClass} mt-0.5 sm:mt-1`}>Adicione pessoas para compartilhar suas finanças</p>
                 </div>
-                <button onClick={() => setShowShareModal(true)} className="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2 font-medium transition-colors">
-                  <UserPlus size={18} />Adicionar
+                <button onClick={() => setShowShareModal(true)} className="w-full sm:w-auto bg-blue-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-blue-600 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium transition-colors">
+                  <UserPlus size={14} className="sm:w-[18px] sm:h-[18px]" />Adicionar
                 </button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {sharedUsers.length > 0 ? (
                   sharedUsers.map(email => (
-                    <div key={email} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <User size={16} className={textClass} />
-                        <span className="text-sm font-medium truncate">{email}</span>
+                    <div key={email} className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                        <User size={14} className={`sm:w-4 sm:h-4 ${textClass}`} />
+                        <span className="text-xs sm:text-sm font-medium truncate">{email}</span>
                       </div>
-                      <button onClick={() => handleRemoveSharedUser(email)} className="ml-2 p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-colors">
-                        <X size={16} />
+                      <button onClick={() => handleRemoveSharedUser(email)} className="ml-2 p-1.5 sm:p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-colors">
+                        <X size={14} className="sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   ))
                 ) : (
-                  <p className={`text-center py-4 ${textClass}`}>Nenhum usuário compartilhado</p>
+                  <p className={`text-center py-3 sm:py-4 text-xs sm:text-sm ${textClass}`}>Nenhum usuário compartilhado</p>
                 )}
               </div>
             </div>
 
             {/* Categorias personalizadas */}
-            <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                <h3 className="text-lg font-bold">Categorias Personalizadas</h3>
-                <button onClick={() => setShowCategoryModal(true)} className="w-full sm:w-auto bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center justify-center gap-2 font-medium transition-colors">
-                  <Plus size={16} />Nova
+            <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <h3 className="text-sm sm:text-base lg:text-lg font-bold">Categorias Personalizadas</h3>
+                <button onClick={() => setShowCategoryModal(true)} className="w-full sm:w-auto bg-green-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-green-600 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium transition-colors">
+                  <Plus size={14} className="sm:w-4 sm:h-4" />Nova
                 </button>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <p className="font-semibold mb-2">Entradas:</p>
-                  <div className="flex flex-wrap gap-2">
+                  <p className="font-semibold mb-1.5 sm:mb-2 text-xs sm:text-sm">Entradas:</p>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {customCategories.entrada.map(cat => (
-                      <span key={cat} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-2 font-medium">
+                      <span key={cat} className="bg-green-100 text-green-800 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-sm flex items-center gap-1 sm:gap-2 font-medium">
                         {cat}
                         <button onClick={() => handleDeleteCategory('entrada', cat)} className="hover:text-red-600 transition-colors">
-                          <X size={14} />
+                          <X size={12} className="sm:w-[14px] sm:h-[14px]" />
                         </button>
                       </span>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <p className="font-semibold mb-2">Despesas:</p>
-                  <div className="flex flex-wrap gap-2">
+                  <p className="font-semibold mb-1.5 sm:mb-2 text-xs sm:text-sm">Saídas:</p>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {customCategories.divida.map(cat => (
-                      <span key={cat} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm flex items-center gap-2 font-medium">
+                      <span key={cat} className="bg-red-100 text-red-800 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-sm flex items-center gap-1 sm:gap-2 font-medium">
                         {cat}
                         <button onClick={() => handleDeleteCategory('divida', cat)} className="hover:text-red-600 transition-colors">
-                          <X size={14} />
+                          <X size={12} className="sm:w-[14px] sm:h-[14px]" />
                         </button>
                       </span>
                     ))}
@@ -1195,26 +1195,26 @@ const FinTrack = () => {
             </div>
 
             {/* Backup */}
-            <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-              <h3 className="text-lg font-bold mb-4">Backup e Restauração</h3>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button onClick={exportBackup} className="flex-1 bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 flex items-center justify-center gap-2 font-medium transition-colors">
-                  <Download size={18} />Exportar Backup
+            <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-3 sm:mb-4">Backup e Restauração</h3>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <button onClick={exportBackup} className="flex-1 bg-green-500 text-white px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg hover:bg-green-600 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium transition-colors">
+                  <Download size={14} className="sm:w-[18px] sm:h-[18px]" />Exportar Backup
                 </button>
-                <label className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-lg hover:bg-orange-600 flex items-center justify-center gap-2 cursor-pointer font-medium transition-colors">
-                  <Upload size={18} />Importar Backup
+                <label className="flex-1 bg-orange-500 text-white px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg hover:bg-orange-600 flex items-center justify-center gap-1 sm:gap-2 cursor-pointer text-xs sm:text-sm font-medium transition-colors">
+                  <Upload size={14} className="sm:w-[18px] sm:h-[18px]" />Importar Backup
                   <input type="file" accept=".json" onChange={importBackup} className="hidden" />
                 </label>
               </div>
             </div>
 
             {/* Preferências */}
-            <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
-              <h3 className="text-lg font-bold mb-4">Preferências</h3>
+            <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-3 sm:mb-4">Preferências</h3>
               <div className="flex justify-between items-center">
-                <span className="font-medium">Modo Escuro</span>
-                <button onClick={() => setDarkMode(!darkMode)} className={`w-14 h-7 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} relative transition-colors`}>
-                  <div className={`w-6 h-6 rounded-full bg-white absolute top-0.5 ${darkMode ? 'right-0.5' : 'left-0.5'} transition-all shadow-md`}></div>
+                <span className="text-xs sm:text-sm font-medium">Modo Escuro</span>
+                <button onClick={() => setDarkMode(!darkMode)} className={`w-12 sm:w-14 h-6 sm:h-7 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} relative transition-colors`}>
+                  <div className={`w-5 sm:w-6 h-5 sm:h-6 rounded-full bg-white absolute top-0.5 ${darkMode ? 'right-0.5' : 'left-0.5'} transition-all shadow-md`}></div>
                 </button>
               </div>
             </div>
@@ -1225,16 +1225,41 @@ const FinTrack = () => {
       {/* Modal nova transação */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`${cardClass} rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl`}>
-            <h2 className="text-2xl font-bold mb-4">Nova Transação</h2>
-            <div className="flex gap-2 mb-4">
-              <button onClick={() => setTransactionType('entrada')} className={`flex-1 py-2 rounded-lg font-medium transition-colors ${transactionType === 'entrada' ? 'bg-green-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>Entrada</button>
-              <button onClick={() => setTransactionType('divida')} className={`flex-1 py-2 rounded-lg font-medium transition-colors ${transactionType === 'divida' ? 'bg-red-500 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>Dívida</button>
+          <div className={`${cardClass} rounded-2xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl`}>
+            <h2 className="text-xl font-bold mb-4">Nova Transação</h2>
+
+            {/* Tipo - Entrada/Dívida */}
+            <div className="flex gap-2 mb-5">
+              <button
+                onClick={() => setTransactionType('entrada')}
+                className={`flex-1 py-3 rounded-xl font-semibold transition-all ${transactionType === 'entrada'
+                  ? 'bg-green-500 text-white shadow-md'
+                  : darkMode
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                Entrada
+              </button>
+              <button
+                onClick={() => setTransactionType('divida')}
+                className={`flex-1 py-3 rounded-xl font-semibold transition-all ${transactionType === 'divida'
+                  ? 'bg-red-500 text-white shadow-md'
+                  : darkMode
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                Saída
+              </button>
             </div>
+
             <div className="space-y-4">
               {/* Valor */}
               <div>
-                <label className="block text-sm font-medium mb-1">Valor *</label>
+                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
+                  Valor <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -1243,33 +1268,43 @@ const FinTrack = () => {
                     const formatted = handleValueChange(e.target.value);
                     setFormData({ ...formData, value: formatted });
                   }}
-                  className={`w-full p-3 border-2 rounded-lg ${!formData.value ? 'border-red-500' : darkMode ? 'border-gray-600' : 'border-gray-300'
-                    } ${darkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}
+                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
+                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
+                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
+                    } focus:outline-none`}
                   placeholder="0,00 ou 0.00"
                 />
-                <p className="text-xs text-gray-500 mt-1">Use vírgula ou ponto para decimais</p>
+                <p className="text-xs text-gray-500 mt-1.5">Use vírgula ou ponto para decimais</p>
               </div>
 
               {/* Data */}
               <div>
-                <label className="block text-sm font-medium mb-1">Data *</label>
+                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
+                  Data <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className={`w-full p-3 border-2 rounded-lg ${!formData.date ? 'border-red-500' : darkMode ? 'border-gray-600' : 'border-gray-300'
-                    } ${darkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}
+                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
+                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
+                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
+                    } focus:outline-none`}
                 />
               </div>
 
               {/* Categoria */}
               <div>
-                <label className="block text-sm font-medium mb-1">Categoria *</label>
+                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
+                  Categoria <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className={`w-full p-3 border-2 rounded-lg ${!formData.category ? 'border-red-500' : darkMode ? 'border-gray-600' : 'border-gray-300'
-                    } ${darkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}
+                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
+                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
+                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
+                    } focus:outline-none`}
                 >
                   <option value="">Selecione a categoria</option>
                   {categories[transactionType].map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -1278,44 +1313,96 @@ const FinTrack = () => {
 
               {/* Descrição */}
               <div>
-                <label className="block text-sm font-medium mb-1">Descrição *</label>
+                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
+                  Descrição <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className={`w-full p-3 border-2 rounded-lg ${!formData.description ? 'border-red-500' : darkMode ? 'border-gray-600' : 'border-gray-300'
-                    } ${darkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}
+                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
+                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
+                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
+                    } focus:outline-none`}
                   placeholder="Ex: Salário de outubro"
                 />
               </div>
 
               {/* Status */}
-              {transactionType === 'divida' && (
-                <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
-                  <option value="pendente">Pendente</option>
-                  <option value="paga">Paga</option>
-                </select>
-              )}
-              {transactionType === 'entrada' && (
-                <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
-                  <option value="pendente">Pendente</option>
-                  <option value="recebido">Recebido</option>
-                </select>
-              )}
+              <div>
+                <label className="block text-sm font-semibold mb-2">Status</label>
+                {transactionType === 'divida' ? (
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
+                      ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
+                      : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
+                      } focus:outline-none`}
+                  >
+                    <option value="pendente">Pendente</option>
+                    <option value="paga">Paga</option>
+                  </select>
+                ) : (
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
+                      ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
+                      : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
+                      } focus:outline-none`}
+                  >
+                    <option value="pendente">Pendente</option>
+                    <option value="recebido">Recebido</option>
+                  </select>
+                )}
+              </div>
 
               {/* Parcelas */}
-              <input type="number" min="1" value={formData.installments} onChange={(e) => setFormData({ ...formData, installments: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Número de parcelas" />
+              <div>
+                <label className="block text-sm font-semibold mb-2">Número de parcelas</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.installments}
+                  onChange={(e) => setFormData({ ...formData, installments: e.target.value })}
+                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
+                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
+                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
+                    } focus:outline-none`}
+                  placeholder="1"
+                />
+              </div>
 
               {/* Recorrente */}
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={formData.recurrent} onChange={(e) => setFormData({ ...formData, recurrent: e.target.checked })} className="w-5 h-5" />
-                <span>Transação recorrente</span>
+              <label className={`flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'
+                }`}>
+                <input
+                  type="checkbox"
+                  checked={formData.recurrent}
+                  onChange={(e) => setFormData({ ...formData, recurrent: e.target.checked })}
+                  className="w-5 h-5 accent-green-500 cursor-pointer"
+                />
+                <span className="font-medium">Transação recorrente</span>
               </label>
 
               {/* Botões */}
-              <div className="flex gap-2 pt-2">
-                <button onClick={() => setShowModal(false)} className={`flex-1 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'}`}>Cancelar</button>
-                <button onClick={handleSubmit} className={`flex-1 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>Salvar</button>
+              <div className="flex gap-3 pt-3">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className={`flex-1 py-3.5 rounded-xl font-semibold transition-all ${darkMode
+                    ? 'bg-gray-700 text-white hover:bg-gray-600'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="flex-1 py-3.5 rounded-xl font-semibold bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg transition-all"
+                >
+                  Salvar
+                </button>
               </div>
             </div>
           </div>
@@ -1366,24 +1453,24 @@ const FinTrack = () => {
 
       {/* Bottom navigation */}
       <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg border-t backdrop-blur-sm bg-opacity-95`}>
-        <div className="max-w-7xl mx-auto flex justify-around items-center p-4">
-          <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'dashboard' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
-            <Home size={24} />
-            <span className="text-xs font-medium">Início</span>
+        <div className="max-w-7xl mx-auto flex justify-around items-center p-2 sm:p-3 lg:p-4">
+          <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-0.5 sm:gap-1 transition-colors ${activeTab === 'dashboard' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
+            <Home size={20} className="sm:w-6 sm:h-6" />
+            <span className="text-[10px] sm:text-xs font-medium">Início</span>
           </button>
-          <button onClick={() => setShowModal(true)} className="flex flex-col items-center gap-1 text-green-500 transform scale-110">
-            <div className="bg-green-500 text-white rounded-full p-3 shadow-lg hover:bg-green-600 transition-colors">
-              <PlusCircle size={24} />
+          <button onClick={() => setShowModal(true)} className="flex flex-col items-center gap-0.5 sm:gap-1 text-green-500 transform scale-100 sm:scale-110">
+            <div className="bg-green-500 text-white rounded-full p-2 sm:p-3 shadow-lg hover:bg-green-600 transition-colors">
+              <PlusCircle size={20} className="sm:w-6 sm:h-6" />
             </div>
-            <span className="text-xs font-medium">Nova</span>
+            <span className="text-[10px] sm:text-xs font-medium">Nova</span>
           </button>
-          <button onClick={() => setActiveTab('relatorios')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'relatorios' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
-            <BarChart3 size={24} />
-            <span className="text-xs font-medium">Relatórios</span>
+          <button onClick={() => setActiveTab('relatorios')} className={`flex flex-col items-center gap-0.5 sm:gap-1 transition-colors ${activeTab === 'relatorios' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
+            <BarChart3 size={20} className="sm:w-6 sm:h-6" />
+            <span className="text-[10px] sm:text-xs font-medium">Relatórios</span>
           </button>
-          <button onClick={() => setActiveTab('configuracoes')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'configuracoes' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
-            <Settings size={24} />
-            <span className="text-xs font-medium">Config</span>
+          <button onClick={() => setActiveTab('configuracoes')} className={`flex flex-col items-center gap-0.5 sm:gap-1 transition-colors ${activeTab === 'configuracoes' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
+            <Settings size={20} className="sm:w-6 sm:h-6" />
+            <span className="text-[10px] sm:text-xs font-medium">Config</span>
           </button>
         </div>
       </div>

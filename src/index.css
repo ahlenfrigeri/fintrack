@@ -3,240 +3,180 @@
 @tailwind utilities;
 
 /* ==============================================
-   OTIMIZAÇÕES RESPONSIVAS PERSONALIZADAS
+   OTIMIZAÇÕES DO MODAL
    ============================================== */
 
-/* Mobile First - < 640px */
-@media (max-width: 639px) {
+/* Remover setas de input number no mobile */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 
-    /* Melhorar scrolling no mobile */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Melhorar inputs em iOS */
+input,
+select,
+textarea {
+    font-size: 16px !important;
+    /* Evita zoom no iOS */
+    border-radius: 12px;
+}
+
+/* Focus states suaves */
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+/* Checkbox customizado */
+input[type="checkbox"] {
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+/* Botões com animação */
+button {
+    transition: all 0.2s ease;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* Modal overlay suave */
+.modal-overlay {
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Smooth scroll */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Prevenir seleção acidental */
+.no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Melhorar renderização */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Otimizar scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #9ca3af;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Placeholder style */
+::placeholder {
+    color: #9ca3af;
+    opacity: 1;
+}
+
+.dark ::placeholder {
+    color: #6b7280;
+}
+
+/* Remover autofill amarelo */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+    -webkit-text-fill-color: inherit;
+    -webkit-box-shadow: 0 0 0px 1000px transparent inset;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Loading spinner */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Safe area para iPhone */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+}
+
+/* Otimizações Mobile */
+@media (max-width: 639px) {
     * {
         -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
     }
 
-    /* Otimizar inputs no mobile */
-    input[type="text"],
-    input[type="number"],
-    input[type="date"],
-    input[type="email"],
-    input[type="password"],
-    select {
-        font-size: 16px !important;
-        /* Evita zoom automático no iOS */
-    }
-
-    /* Melhorar botões touchscreen */
-    button {
-        min-height: 44px;
-        /* Tamanho mínimo recomendado para toque */
-    }
-
-    /* Otimizar gráficos no mobile */
-    .recharts-wrapper {
-        font-size: 10px;
-    }
-
-    /* Compactar espaçamentos */
     body {
         font-size: 14px;
     }
 }
 
-/* Tablet - 640px to 1024px */
+/* Tablet */
 @media (min-width: 640px) and (max-width: 1023px) {
-
-    /* Otimizar para telas médias */
     body {
         font-size: 15px;
     }
-
-    /* Ajustar gráficos */
-    .recharts-wrapper {
-        font-size: 12px;
-    }
-
-    /* Melhorar cards */
-    .rounded-xl {
-        border-radius: 0.75rem;
-    }
 }
 
-/* Desktop - >= 1024px */
+/* Desktop */
 @media (min-width: 1024px) {
-
-    /* Melhorar legibilidade */
     body {
         font-size: 16px;
     }
-
-    /* Otimizar hover states */
-    button:hover,
-    a:hover {
-        transform: translateY(-1px);
-        transition: all 0.2s ease;
-    }
-
-    /* Melhorar shadows em desktop */
-    .shadow-lg {
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    }
-}
-
-/* ==============================================
-   OTIMIZAÇÕES DE PERFORMANCE
-   ============================================== */
-
-/* Smooth scrolling */
-html {
-    scroll-behavior: smooth;
-}
-
-/* Otimizar animações */
-@media (prefers-reduced-motion: reduce) {
-
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* Melhorar renderização de fontes */
-body {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-}
-
-/* ==============================================
-   CORREÇÕES ESPECÍFICAS
-   ============================================== */
-
-/* Prevenir overflow horizontal */
-body,
-html {
-    overflow-x: hidden;
-    width: 100%;
-}
-
-/* Melhorar focus states */
-input:focus,
-select:focus,
-textarea:focus,
-button:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-}
-
-/* Dark mode otimizado */
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #111827;
-    }
-}
-
-/* ==============================================
-   UTILITÁRIOS CUSTOMIZADOS
-   ============================================== */
-
-/* Truncate text responsivo */
-.truncate-responsive {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-@media (max-width: 639px) {
-    .truncate-responsive {
-        max-width: 150px;
-    }
-}
-
-@media (min-width: 640px) and (max-width: 1023px) {
-    .truncate-responsive {
-        max-width: 200px;
-    }
-}
-
-/* Container responsivo otimizado */
-.container-custom {
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-}
-
-@media (min-width: 640px) {
-    .container-custom {
-        max-width: 640px;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-}
-
-@media (min-width: 768px) {
-    .container-custom {
-        max-width: 768px;
-    }
-}
-
-@media (min-width: 1024px) {
-    .container-custom {
-        max-width: 1024px;
-        padding-left: 1.5rem;
-        padding-right: 1.5rem;
-    }
-}
-
-@media (min-width: 1280px) {
-    .container-custom {
-        max-width: 1280px;
-    }
-}
-
-/* ==============================================
-   ANIMAÇÕES OTIMIZADAS
-   ============================================== */
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.fade-in {
-    animation: fadeIn 0.3s ease-out;
-}
-
-/* Skeleton loading para melhor UX */
-@keyframes skeleton-loading {
-    0% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0 50%;
-    }
-}
-
-.skeleton {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: skeleton-loading 1.5s ease-in-out infinite;
-}
-
-/* Dark mode skeleton */
-.dark .skeleton {
-    background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
-    background-size: 200% 100%;
 }

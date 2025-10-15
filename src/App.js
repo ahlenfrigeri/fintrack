@@ -1224,182 +1224,213 @@ const FinTrack = () => {
 
       {/* Modal nova transação */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`${cardClass} rounded-2xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl`}>
-            <h2 className="text-xl font-bold mb-4">Nova Transação</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-3 backdrop-blur-sm">
+          <div className={`${cardClass} rounded-3xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl`}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Nova Transação</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className={`p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              >
+                <X size={24} className={darkMode ? 'text-gray-400' : 'text-gray-600'} />
+              </button>
+            </div>
 
-            {/* Tipo - Entrada/Dívida */}
-            <div className="flex gap-2 mb-5">
+            {/* Tipo - Entrada/Saída */}
+            <div className="grid grid-cols-2 gap-3 mb-6 p-1 bg-gray-100 dark:bg-gray-700 rounded-2xl">
               <button
                 onClick={() => setTransactionType('entrada')}
-                className={`flex-1 py-3 rounded-xl font-semibold transition-all ${transactionType === 'entrada'
-                  ? 'bg-green-500 text-white shadow-md'
-                  : darkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                className={`py-3 rounded-xl font-semibold transition-all ${transactionType === 'entrada'
+                  ? 'bg-green-500 text-white shadow-lg scale-105'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
               >
                 Entrada
               </button>
               <button
                 onClick={() => setTransactionType('divida')}
-                className={`flex-1 py-3 rounded-xl font-semibold transition-all ${transactionType === 'divida'
-                  ? 'bg-red-500 text-white shadow-md'
-                  : darkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                className={`py-3 rounded-xl font-semibold transition-all ${transactionType === 'divida'
+                  ? 'bg-red-500 text-white shadow-lg scale-105'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
               >
                 Saída
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* Valor */}
               <div>
-                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
                   Valor <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={formData.value}
-                  onChange={(e) => {
-                    const formatted = handleValueChange(e.target.value);
-                    setFormData({ ...formData, value: formatted });
-                  }}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
-                  placeholder="0,00 ou 0.00"
-                />
-                <p className="text-xs text-gray-500 mt-1.5">Use vírgula ou ponto para decimais</p>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.value}
+                    onChange={(e) => {
+                      const formatted = handleValueChange(e.target.value);
+                      setFormData({ ...formData, value: formatted });
+                    }}
+                    className={`w-full p-4 pl-4 pr-4 rounded-2xl font-semibold text-lg transition-all ${darkMode
+                      ? 'bg-gray-700 border-2 border-gray-600 text-white placeholder-gray-500 focus:border-green-400 focus:bg-gray-600'
+                      : 'bg-gray-50 border-2 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-green-500 focus:bg-white'
+                      } focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-20`}
+                    placeholder="0,00"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-1">Use vírgula ou ponto para decimais</p>
               </div>
 
               {/* Data */}
               <div>
-                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
                   Data <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
+                  className={`w-full p-4 rounded-2xl font-medium transition-all ${darkMode
+                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-400 focus:bg-gray-600'
+                    : 'bg-gray-50 border-2 border-gray-300 text-gray-900 focus:border-green-500 focus:bg-white'
+                    } focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-20`}
                 />
               </div>
 
               {/* Categoria */}
               <div>
-                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
                   Categoria <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
-                >
-                  <option value="">Selecione a categoria</option>
-                  {categories[transactionType].map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
+                <div className="relative">
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className={`w-full p-4 rounded-2xl font-medium transition-all appearance-none ${darkMode
+                      ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-400 focus:bg-gray-600'
+                      : 'bg-gray-50 border-2 border-gray-300 text-gray-900 focus:border-green-500 focus:bg-white'
+                      } focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-20`}
+                  >
+                    <option value="">Selecione a categoria</option>
+                    {categories[transactionType].map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <svg className={`w-5 h-5 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
 
               {/* Descrição */}
               <div>
-                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
                   Descrição <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
+                  className={`w-full p-4 rounded-2xl font-medium transition-all ${darkMode
+                    ? 'bg-gray-700 border-2 border-gray-600 text-white placeholder-gray-500 focus:border-green-400 focus:bg-gray-600'
+                    : 'bg-gray-50 border-2 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-green-500 focus:bg-white'
+                    } focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-20`}
                   placeholder="Ex: Salário de outubro"
                 />
               </div>
 
               {/* Status */}
               <div>
-                <label className="block text-sm font-semibold mb-2">Status</label>
-                {transactionType === 'divida' ? (
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                      ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                      : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                      } focus:outline-none`}
-                  >
-                    <option value="pendente">Pendente</option>
-                    <option value="paga">Paga</option>
-                  </select>
-                ) : (
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                      ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                      : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                      } focus:outline-none`}
-                  >
-                    <option value="pendente">Pendente</option>
-                    <option value="recebido">Recebido</option>
-                  </select>
-                )}
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
+                  Status
+                </label>
+                <div className="relative">
+                  {transactionType === 'divida' ? (
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className={`w-full p-4 rounded-2xl font-medium transition-all appearance-none ${darkMode
+                        ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-400 focus:bg-gray-600'
+                        : 'bg-gray-50 border-2 border-gray-300 text-gray-900 focus:border-green-500 focus:bg-white'
+                        } focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-20`}
+                    >
+                      <option value="pendente">Pendente</option>
+                      <option value="paga">Paga</option>
+                    </select>
+                  ) : (
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className={`w-full p-4 rounded-2xl font-medium transition-all appearance-none ${darkMode
+                        ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-400 focus:bg-gray-600'
+                        : 'bg-gray-50 border-2 border-gray-300 text-gray-900 focus:border-green-500 focus:bg-white'
+                        } focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-20`}
+                    >
+                      <option value="pendente">Pendente</option>
+                      <option value="recebido">Recebido</option>
+                    </select>
+                  )}
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <svg className={`w-5 h-5 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
 
               {/* Parcelas */}
               <div>
-                <label className="block text-sm font-semibold mb-2">Número de parcelas</label>
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
+                  Número de parcelas
+                </label>
                 <input
                   type="number"
                   min="1"
                   value={formData.installments}
                   onChange={(e) => setFormData({ ...formData, installments: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
+                  className={`w-full p-4 rounded-2xl font-medium transition-all ${darkMode
+                    ? 'bg-gray-700 border-2 border-gray-600 text-white placeholder-gray-500 focus:border-green-400 focus:bg-gray-600'
+                    : 'bg-gray-50 border-2 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-green-500 focus:bg-white'
+                    } focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-20`}
                   placeholder="1"
                 />
               </div>
 
               {/* Recorrente */}
-              <label className={`flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'
+              <label className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2 ${formData.recurrent
+                ? 'bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border-green-500'
+                : darkMode
+                  ? 'bg-gray-700 border-gray-600 hover:bg-gray-600'
+                  : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
                 }`}>
                 <input
                   type="checkbox"
                   checked={formData.recurrent}
                   onChange={(e) => setFormData({ ...formData, recurrent: e.target.checked })}
-                  className="w-5 h-5 accent-green-500 cursor-pointer"
+                  className="w-6 h-6 accent-green-500 cursor-pointer rounded-lg"
                 />
-                <span className="font-medium">Transação recorrente</span>
+                <div className="flex-1">
+                  <span className="font-semibold block">Transação recorrente</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Repete todo mês automaticamente</span>
+                </div>
               </label>
 
               {/* Botões */}
-              <div className="flex gap-3 pt-3">
+              <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => setShowModal(false)}
-                  className={`flex-1 py-3.5 rounded-xl font-semibold transition-all ${darkMode
-                    ? 'bg-gray-700 text-white hover:bg-gray-600'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  className={`flex-1 py-4 rounded-2xl font-bold transition-all ${darkMode
+                    ? 'bg-gray-700 text-white hover:bg-gray-600 active:scale-95'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-95'
                     }`}
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="flex-1 py-3.5 rounded-xl font-semibold bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg transition-all"
+                  className="flex-1 py-4 rounded-2xl font-bold bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-xl active:scale-95 transition-all"
                 >
                   Salvar
                 </button>
@@ -1411,7 +1442,7 @@ const FinTrack = () => {
 
       {/* Modal compartilhar */}
       {showShareModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-2xl p-6 max-w-md w-full shadow-2xl`}>
             <h2 className="text-2xl font-bold mb-4">Compartilhar com usuário</h2>
             <div className="space-y-4">

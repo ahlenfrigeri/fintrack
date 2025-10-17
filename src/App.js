@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Home, PlusCircle, BarChart3, Settings, TrendingUp, TrendingDown, DollarSign, Download, Moon, Sun, Target, Trash2, LogOut, User, Bell, Calendar, Upload, FileText, Plus, X, Users, Share2, UserPlus, Clock, Check } from 'lucide-react';
+import { Home, PlusCircle, BarChart3, Settings, TrendingUp, TrendingDown, DollarSign, Download, Moon, Sun, Target, Trash2, LogOut, User, Bell, Calendar, Upload, FileText, Plus, X, Users, Share2, UserPlus, Clock, Check, CreditCard, Filter, ArrowLeft } from 'lucide-react';
 import Auth from './Auth';
 import { format, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,8 +17,10 @@ const FinTrack = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showFilteredList, setShowFilteredList] = useState(null);
   const [transactionType, setTransactionType] = useState('entrada');
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('todas');
 
   const [currency, setCurrency] = useState('BRL');
   const [exchangeRates] = useState({ BRL: 1, USD: 5.0, EUR: 5.5, GBP: 6.5 });
@@ -30,31 +32,39 @@ const FinTrack = () => {
   const [shareEmail, setShareEmail] = useState('');
 
   const [formData, setFormData] = useState({
-    value: '', date: '', category: '', description: '', status: 'pendente', recurrent: false, installments: 1
+    value: '',
+    date: '',
+    category: '',
+    description: '',
+    status: 'pendente',
+    recurrent: false,
+    installments: 1,
+    paymentMethod: 'pix'
   });
 
   const [newCategory, setNewCategory] = useState({ name: '', type: 'divida' });
   const [expandedGroups, setExpandedGroups] = useState({});
 
-  // Função para formatar o valor do input (aceita vírgula e ponto)
+  // Formas de pagamento disponíveis
+  const paymentMethods = {
+    'pix': { label: 'PIX', color: 'bg-teal-500' },
+    'cartao-credito': { label: 'Cartão de Crédito', color: 'bg-purple-500' },
+    'cartao-debito': { label: 'Cartão de Débito', color: 'bg-blue-500' },
+    'boleto': { label: 'Boleto', color: 'bg-orange-500' },
+    'dinheiro': { label: 'Dinheiro', color: 'bg-green-500' },
+    'transferencia': { label: 'Transferência', color: 'bg-indigo-500' }
+  };
+
   const handleValueChange = (value) => {
-    // Remove tudo exceto números, vírgula e ponto
     let formatted = value.replace(/[^\d,\.]/g, '');
-
-    // Substitui vírgula por ponto
     formatted = formatted.replace(',', '.');
-
-    // Garante apenas um ponto decimal
     const parts = formatted.split('.');
     if (parts.length > 2) {
       formatted = parts[0] + '.' + parts.slice(1).join('');
     }
-
-    // Limita a 2 casas decimais
     if (parts[1] && parts[1].length > 2) {
       formatted = parts[0] + '.' + parts[1].substring(0, 2);
     }
-
     return formatted;
   };
 
@@ -78,7 +88,6 @@ const FinTrack = () => {
   };
   const currencySymbols = { BRL: 'R$', USD: '$', EUR: '€', GBP: '£' };
 
-  // Monitorar autenticação
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -87,13 +96,10 @@ const FinTrack = () => {
     return () => unsubscribe();
   }, []);
 
-  // Carregar dados do Firestore quando usuário autenticar
   useEffect(() => {
     if (!currentUser) return;
 
     const userId = currentUser.uid;
-
-    // Listener em tempo real para transações
     const transactionsRef = collection(db, 'users', userId, 'transactions');
     const unsubTransactions = onSnapshot(transactionsRef, (snapshot) => {
       const transactionsData = [];
@@ -103,7 +109,6 @@ const FinTrack = () => {
       setTransactions(transactionsData);
     });
 
-    // Carregar configurações do usuário
     const loadUserSettings = async () => {
       try {
         const settingsRef = doc(db, 'users', userId, 'settings', 'preferences');
@@ -123,14 +128,11 @@ const FinTrack = () => {
     };
 
     loadUserSettings();
-
     return () => unsubTransactions();
   }, [currentUser]);
 
-  // Salvar configurações no Firestore
   const saveSettings = async () => {
     if (!currentUser) return;
-
     try {
       const settingsRef = doc(db, 'users', currentUser.uid, 'settings', 'preferences');
       await setDoc(settingsRef, {
@@ -146,7 +148,6 @@ const FinTrack = () => {
     }
   };
 
-  // Salvar configurações quando mudarem
   useEffect(() => {
     if (currentUser) {
       const timer = setTimeout(() => {
@@ -156,10 +157,8 @@ const FinTrack = () => {
     }
   }, [monthlyGoal, currency, darkMode, customCategories, sharedUsers]);
 
-  // Salvar transação no Firestore
   const saveTransaction = async (transaction) => {
     if (!currentUser) return;
-
     try {
       const transactionRef = doc(db, 'users', currentUser.uid, 'transactions', transaction.id.toString());
       await setDoc(transactionRef, transaction);
@@ -169,10 +168,8 @@ const FinTrack = () => {
     }
   };
 
-  // Deletar transação do Firestore
   const deleteTransactionFromFirestore = async (transactionId) => {
     if (!currentUser) return;
-
     try {
       const transactionRef = doc(db, 'users', currentUser.uid, 'transactions', transactionId.toString());
       await setDoc(transactionRef, { deleted: true, deletedAt: new Date().toISOString() }, { merge: true });
@@ -181,23 +178,19 @@ const FinTrack = () => {
     }
   };
 
-  // Adicionar usuário compartilhado
   const handleShareWithUser = async () => {
     if (!shareEmail.trim()) {
       alert('Digite um email válido');
       return;
     }
-
     if (shareEmail === currentUser.email) {
       alert('Você não pode compartilhar com você mesmo!');
       return;
     }
-
     if (sharedUsers.includes(shareEmail)) {
       alert('Este usuário já tem acesso');
       return;
     }
-
     const updatedUsers = [...sharedUsers, shareEmail];
     setSharedUsers(updatedUsers);
     setShareEmail('');
@@ -205,14 +198,12 @@ const FinTrack = () => {
     alert(`Acesso compartilhado com ${shareEmail}!`);
   };
 
-  // Remover usuário compartilhado
   const handleRemoveSharedUser = (email) => {
     if (window.confirm(`Remover acesso de ${email}?`)) {
       setSharedUsers(sharedUsers.filter(u => u !== email));
     }
   };
 
-  // Verificar notificações
   useEffect(() => {
     if (!currentUser) return;
     const today = new Date();
@@ -251,7 +242,9 @@ const FinTrack = () => {
     return transactions.filter(t => {
       if (t.deleted) return false;
       const transDate = format(parseISO(t.date), 'yyyy-MM');
-      return transDate === selectedMonth;
+      const matchesMonth = transDate === selectedMonth;
+      const matchesPayment = paymentMethodFilter === 'todas' || t.paymentMethod === paymentMethodFilter;
+      return matchesMonth && matchesPayment;
     });
   };
 
@@ -343,24 +336,12 @@ const FinTrack = () => {
   };
 
   const handleSubmit = async () => {
-    // Converter vírgula para ponto antes de validar
     const valorFormatado = formData.value?.toString().replace(',', '.').trim();
     const valorNumerico = parseFloat(valorFormatado);
-
     const data = formData.date?.trim();
     const categoria = formData.category?.trim();
     const descricao = formData.description?.trim();
 
-    console.log('🔍 DEBUG - Validação:', {
-      valorOriginal: formData.value,
-      valorFormatado,
-      valorNumerico,
-      data,
-      categoria,
-      descricao
-    });
-
-    // Verificar campos vazios
     const camposVazios = [];
     if (!valorFormatado || isNaN(valorNumerico) || valorNumerico <= 0) camposVazios.push('Valor (digite um número válido)');
     if (!data) camposVazios.push('Data');
@@ -369,7 +350,6 @@ const FinTrack = () => {
 
     if (camposVazios.length > 0) {
       alert(`❌ Campos obrigatórios não preenchidos:\n\n${camposVazios.map(c => `• ${c}`).join('\n')}`);
-      console.error('❌ Campos vazios:', camposVazios);
       return;
     }
 
@@ -394,10 +374,10 @@ const FinTrack = () => {
             description: `${descricao} (${i + 1}/${formData.installments})`,
             status: 'pendente',
             recurrent: formData.recurrent,
+            paymentMethod: formData.paymentMethod,
             createdAt: new Date().toISOString()
           };
 
-          console.log(`💾 Salvando parcela ${i + 1}/${formData.installments}...`);
           await saveTransaction(transaction);
         }
         alert(`✅ ${formData.installments} parcelas adicionadas com sucesso!`);
@@ -411,15 +391,14 @@ const FinTrack = () => {
           description: descricao,
           status: formData.status,
           recurrent: formData.recurrent,
+          paymentMethod: formData.paymentMethod,
           createdAt: new Date().toISOString()
         };
 
-        console.log('💾 Salvando transação única...');
         await saveTransaction(transaction);
         alert('✅ Transação adicionada com sucesso!');
       }
 
-      // Limpar formulário e fechar modal
       setShowModal(false);
       setFormData({
         value: '',
@@ -428,7 +407,8 @@ const FinTrack = () => {
         description: '',
         status: 'pendente',
         recurrent: false,
-        installments: 1
+        installments: 1,
+        paymentMethod: 'pix'
       });
 
     } catch (error) {
@@ -520,8 +500,11 @@ const FinTrack = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Tipo,Valor,Data,Categoria,Descrição,Status'];
-    const rows = transactions.filter(t => !t.deleted).map(t => `${t.type},${t.value},${t.date},${t.category},${t.description},${t.status}`);
+    const headers = ['Tipo,Valor,Data,Categoria,Descrição,Status,Forma de Pagamento'];
+    const rows = transactions.filter(t => !t.deleted).map(t => {
+      const paymentLabel = paymentMethods[t.paymentMethod]?.label || t.paymentMethod || 'N/A';
+      return `${t.type},${t.value},${t.date},${t.category},${t.description},${t.status},${paymentLabel}`;
+    });
     const csv = [headers, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -628,6 +611,130 @@ const FinTrack = () => {
     reader.readAsText(file);
   };
 
+  const openFilteredList = (filterType) => {
+    setShowFilteredList(filterType);
+  };
+
+  const getFilteredListData = () => {
+    const filtered = getFilteredTransactions();
+
+    switch (showFilteredList) {
+      case 'entradas':
+        return {
+          title: 'Entradas Recebidas',
+          transactions: filtered.filter(t => t.type === 'entrada' && (t.status === 'recebido' || t.status === 'paga')),
+          color: 'green'
+        };
+      case 'entradas-pendentes':
+        return {
+          title: 'Entradas a Receber',
+          transactions: filtered.filter(t => t.type === 'entrada' && t.status === 'pendente'),
+          color: 'blue'
+        };
+      case 'dividas-pendentes':
+        return {
+          title: 'Contas a Pagar',
+          transactions: filtered.filter(t => t.type === 'divida' && t.status === 'pendente'),
+          color: 'orange'
+        };
+      case 'dividas-pagas':
+        return {
+          title: 'Despesas Pagas',
+          transactions: filtered.filter(t => t.type === 'divida' && t.status === 'paga'),
+          color: 'purple'
+        };
+      default:
+        return { title: '', transactions: [], color: 'gray' };
+    }
+  };
+
+  const FilteredListModal = () => {
+    if (!showFilteredList) return null;
+
+    const { title, transactions: listTransactions, color } = getFilteredListData();
+
+    const colorClasses = {
+      green: 'bg-green-500',
+      blue: 'bg-blue-500',
+      orange: 'bg-orange-500',
+      purple: 'bg-purple-500'
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className={`${cardClass} rounded-2xl p-5 w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowFilteredList(null)}
+                className={`p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <h2 className="text-xl font-bold">{title}</h2>
+            </div>
+            <span className={`${colorClasses[color]} text-white px-3 py-1 rounded-full text-sm font-semibold`}>
+              {listTransactions.length} transações
+            </span>
+          </div>
+
+          {listTransactions.length === 0 ? (
+            <div className="text-center py-12">
+              <p className={textClass}>Nenhuma transação encontrada</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {listTransactions.map(t => {
+                const payment = paymentMethods[t.paymentMethod] || { label: 'N/A', icon: '💳', color: 'bg-gray-500' };
+                return (
+                  <div key={t.id} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-lg truncate">{t.description}</p>
+                        <div className="flex items-center gap-2 flex-wrap text-sm mt-1">
+                          <span className={`${payment.color} text-white px-2 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1`}>
+                            <span>{payment.icon}</span>
+                            {payment.label}
+                          </span>
+                          <span className={textClass}>{t.category}</span>
+                          <span className={textClass}>•</span>
+                          <span className={textClass}>{format(parseISO(t.date), 'dd/MM/yyyy')}</span>
+                        </div>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className={`font-bold text-xl ${t.type === 'entrada' ? 'text-green-500' : 'text-red-500'}`}>
+                          {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => toggleStatus(t.id)}
+                        className={`flex-1 text-xs px-3 py-2 rounded-lg font-semibold transition-colors ${(t.status === 'paga' || t.status === 'recebido')
+                          ? 'bg-purple-500 text-white hover:bg-purple-600'
+                          : 'bg-orange-500 text-white hover:bg-orange-600'
+                          }`}
+                      >
+                        {t.status === 'paga' ? '✓ Paga' : t.status === 'recebido' ? '✓ Recebido' : '⏱ Pendente'}
+                      </button>
+                      <button
+                        onClick={() => deleteTransaction(t.id)}
+                        className={`px-3 py-2 rounded-lg transition-colors ${darkMode ? 'bg-red-900 text-red-200 hover:bg-red-800' : 'bg-red-100 text-red-600 hover:bg-red-200'
+                          }`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -657,7 +764,6 @@ const FinTrack = () => {
 
   return (
     <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
-      {/* Header responsivo */}
       <div className={`${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b border-gray-200'} shadow-sm p-2 sm:p-3 lg:p-4 sticky top-0 z-10 backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3">
@@ -665,7 +771,6 @@ const FinTrack = () => {
             <h1 className={`text-base sm:text-lg lg:text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>FinTrack</h1>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
-            {/* Notificações */}
             <div className="relative">
               <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-1.5 sm:p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
                 <Bell size={18} className={`sm:w-5 sm:h-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`} />
@@ -686,18 +791,15 @@ const FinTrack = () => {
               )}
             </div>
 
-            {/* User info - oculto em mobile */}
             <div className="hidden lg:flex items-center gap-2">
               <User size={18} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
               <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{currentUser.email}</span>
             </div>
 
-            {/* Dark mode toggle */}
             <button onClick={() => setDarkMode(!darkMode)} className={`p-1.5 sm:p-2 rounded-lg transition-all ${darkMode ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
               {darkMode ? <Sun size={18} className="sm:w-5 sm:h-5" /> : <Moon size={18} className="sm:w-5 sm:h-5" />}
             </button>
 
-            {/* Logout */}
             <button onClick={handleLogout} className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>
               <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" />
               <span className="hidden sm:inline">Sair</span>
@@ -709,60 +811,78 @@ const FinTrack = () => {
       <div className="max-w-7xl mx-auto p-2 sm:p-3 lg:p-4 pb-20 sm:pb-24">
         {activeTab === 'dashboard' && (
           <div className="space-y-3 sm:space-y-4 lg:space-y-6">
-            {/* Filtro de mês responsivo */}
-            <div className={`${cardClass} p-2.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3`}>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Calendar size={16} className={`sm:w-5 sm:h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                <span className="font-semibold text-xs sm:text-sm lg:text-base">Filtrar por mês:</span>
+            <div className={`${cardClass} p-2.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl shadow-sm`}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Calendar size={16} className={`sm:w-5 sm:h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                  <div className="flex-1">
+                    <span className="font-semibold text-xs sm:text-sm lg:text-base block mb-1">Filtrar por mês:</span>
+                    <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`w-full p-1.5 sm:p-2 border rounded-lg text-xs sm:text-sm font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Filter size={16} className={`sm:w-5 sm:h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                  <div className="flex-1">
+                    <span className="font-semibold text-xs sm:text-sm lg:text-base block mb-1">Forma de pagamento:</span>
+                    <select
+                      value={paymentMethodFilter}
+                      onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                      className={`w-full p-1.5 sm:p-2 border rounded-lg text-xs sm:text-sm font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                    >
+                      <option value="todas">Todas</option>
+                      {Object.entries(paymentMethods).map(([key, method]) => (
+                        <option key={key} value={key}>{method.icon} {method.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-              <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`w-full sm:w-auto p-1.5 sm:p-2 border rounded-lg text-xs sm:text-sm font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
             </div>
 
-            {/* Cards resumo - Grid responsivo */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
-              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <button onClick={() => openFilteredList('entradas')} className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer text-left`}>
                 <div className="flex flex-col gap-1 sm:gap-2">
                   <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>Entradas Recebidas</p>
                   <p className="text-sm sm:text-lg lg:text-2xl font-bold text-green-500">{formatCurrency(filteredTotals.entradas)}</p>
                   <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
                     <TrendingUp className="text-green-600" size={12} />
-                    <span className="text-[9px] sm:text-xs text-green-600">Mês atual</span>
+                    <span className="text-[9px] sm:text-xs text-green-600">Clique p/ detalhes</span>
                   </div>
                 </div>
-              </div>
+              </button>
 
-              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <button onClick={() => openFilteredList('entradas-pendentes')} className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer text-left`}>
                 <div className="flex flex-col gap-1 sm:gap-2">
                   <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>A Receber</p>
                   <p className="text-sm sm:text-lg lg:text-2xl font-bold text-blue-500">{formatCurrency(filteredTotals.entradasPendentes)}</p>
                   <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
                     <Clock className="text-blue-600" size={12} />
-                    <span className="text-[9px] sm:text-xs text-blue-600">Pendente</span>
+                    <span className="text-[9px] sm:text-xs text-blue-600">Clique p/ detalhes</span>
                   </div>
                 </div>
-              </div>
+              </button>
 
-              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <button onClick={() => openFilteredList('dividas-pendentes')} className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer text-left`}>
                 <div className="flex flex-col gap-1 sm:gap-2">
                   <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>A Pagar</p>
                   <p className="text-sm sm:text-lg lg:text-2xl font-bold text-orange-500">{formatCurrency(filteredTotals.dividasPendentes)}</p>
                   <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
                     <TrendingDown className="text-orange-600" size={12} />
-                    <span className="text-[9px] sm:text-xs text-orange-600">Pendente</span>
+                    <span className="text-[9px] sm:text-xs text-orange-600">Clique p/ detalhes</span>
                   </div>
                 </div>
-              </div>
+              </button>
 
-              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
+              <button onClick={() => openFilteredList('dividas-pagas')} className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer text-left`}>
                 <div className="flex flex-col gap-1 sm:gap-2">
                   <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>Despesas Pagas</p>
                   <p className="text-sm sm:text-lg lg:text-2xl font-bold text-purple-500">{formatCurrency(filteredTotals.dividasPagas)}</p>
                   <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
                     <Check className="text-purple-600" size={12} />
-                    <span className="text-[9px] sm:text-xs text-purple-600">Mês atual</span>
+                    <span className="text-[9px] sm:text-xs text-purple-600">Clique p/ detalhes</span>
                   </div>
                 </div>
-              </div>
+              </button>
 
               <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm col-span-2 sm:col-span-2 lg:col-span-1`}>
                 <div className="flex flex-col gap-1 sm:gap-2">
@@ -776,7 +896,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Meta de economia */}
             <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
               <div className="flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                 <Target className={darkMode ? 'text-gray-400' : 'text-gray-600'} size={20} />
@@ -794,9 +913,7 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Gráficos - Grid responsivo */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-              {/* Gastos por categoria */}
               <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
                 <h2 className="text-sm sm:text-base lg:text-xl font-bold mb-3 sm:mb-4">Despesas por Categoria</h2>
                 {expensesByCategory.length > 0 ? (
@@ -813,7 +930,6 @@ const FinTrack = () => {
                 )}
               </div>
 
-              {/* Entradas por categoria */}
               <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
                 <h2 className="text-sm sm:text-base lg:text-xl font-bold mb-3 sm:mb-4">Entradas por Categoria</h2>
                 {incomeByCategory.length > 0 ? (
@@ -830,7 +946,6 @@ const FinTrack = () => {
                 )}
               </div>
 
-              {/* Próximas contas */}
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-lg md:text-xl font-bold mb-4">Próximas Contas</h2>
                 <div className="space-y-3">
@@ -850,7 +965,6 @@ const FinTrack = () => {
                 </div>
               </div>
 
-              {/* Tendência de categorias */}
               <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
                 <h2 className="text-lg md:text-xl font-bold mb-4">Tendência de Despesas (3 meses)</h2>
                 {categoryTrends.length > 0 && categoryTrends.some(m => Object.keys(m).length > 1) ? (
@@ -872,7 +986,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Evolução mensal - 12 meses */}
             <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
               <h2 className="text-lg md:text-xl font-bold mb-4">Evolução Anual (Últimos 12 Meses)</h2>
               <ResponsiveContainer width="100%" height={300}>
@@ -915,7 +1028,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Gráfico comparativo */}
             <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
               <h3 className="text-lg md:text-xl font-bold mb-4">Comparativo Mensal</h3>
               <ResponsiveContainer width="100%" height={300}>
@@ -943,7 +1055,6 @@ const FinTrack = () => {
               </ResponsiveContainer>
             </div>
 
-            {/* Lista de transações */}
             <div className={`${cardClass} p-4 md:p-6 rounded-xl shadow-sm`}>
               <h3 className="text-lg md:text-xl font-bold mb-4">Todas as Transações</h3>
               <div className="space-y-2">
@@ -954,12 +1065,17 @@ const FinTrack = () => {
                       const today = new Date();
                       const dueDate = new Date(t.date);
                       const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                      const payment = paymentMethods[t.paymentMethod] || { label: 'N/A', icon: '💳', color: 'bg-gray-500' };
 
                       return (
                         <div key={t.id} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                           <div className="flex-1 min-w-0 w-full sm:w-auto">
                             <p className="font-semibold truncate">{t.description}</p>
                             <div className="flex items-center gap-2 flex-wrap text-sm">
+                              <span className={`${payment.color} text-white px-2 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1`}>
+                                <span>{payment.icon}</span>
+                                {payment.label}
+                              </span>
                               <p className={textClass}>{t.category}</p>
                               <span className={`${textClass} hidden sm:inline`}>•</span>
                               <p className={textClass}>{format(parseISO(t.date), 'dd/MM/yyyy')}</p>
@@ -994,7 +1110,6 @@ const FinTrack = () => {
                         </div>
                       );
                     } else {
-                      // Grupo de parcelas
                       const totalValue = group.transactions.reduce((sum, t) => sum + t.value, 0);
                       const totalInstallments = group.transactions.length;
                       const pendingCount = group.transactions.filter(t => t.status === 'pendente').length;
@@ -1053,6 +1168,7 @@ const FinTrack = () => {
                                 const installmentMatch = t.description.match(/\((\d+)\/(\d+)\)/);
                                 const currentInstallment = installmentMatch ? installmentMatch[1] : '';
                                 const totalInstallments = installmentMatch ? installmentMatch[2] : '';
+                                const payment = paymentMethods[t.paymentMethod] || { label: 'N/A', icon: '💳', color: 'bg-gray-500' };
 
                                 return (
                                   <div key={t.id} className={`flex justify-between items-center gap-2 p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} border ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
@@ -1060,6 +1176,9 @@ const FinTrack = () => {
                                       <div className="flex items-center gap-2 flex-wrap text-sm">
                                         <span className={`text-xs px-2 py-1 rounded font-bold ${darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-300 text-gray-700'}`}>
                                           {currentInstallment}/{totalInstallments}
+                                        </span>
+                                        <span className={`${payment.color} text-white px-2 py-0.5 rounded-full text-xs font-semibold`}>
+                                          {payment.icon}
                                         </span>
                                         <p className={textClass}>{format(parseISO(t.date), 'dd/MM')}</p>
                                         {t.type === 'divida' && t.status === 'pendente' && daysUntil >= 0 && daysUntil <= 7 && (
@@ -1103,7 +1222,6 @@ const FinTrack = () => {
           <div className="space-y-3 sm:space-y-4 lg:space-y-6">
             <h2 className={`text-base sm:text-xl lg:text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Configurações</h2>
 
-            {/* Meta mensal */}
             <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
               <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-3 sm:mb-4">Meta Mensal de Economia</h3>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -1112,7 +1230,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Moeda */}
             <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
               <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-3 sm:mb-4">Moeda</h3>
               <select value={currency} onChange={(e) => setCurrency(e.target.value)} className={`w-full p-2.5 sm:p-3 border rounded-lg text-sm sm:text-base font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
@@ -1123,7 +1240,6 @@ const FinTrack = () => {
               </select>
             </div>
 
-            {/* Compartilhamento */}
             <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <div>
@@ -1156,7 +1272,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Categorias personalizadas */}
             <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <h3 className="text-sm sm:text-base lg:text-lg font-bold">Categorias Personalizadas</h3>
@@ -1194,7 +1309,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Backup */}
             <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
               <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-3 sm:mb-4">Backup e Restauração</h3>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -1208,7 +1322,6 @@ const FinTrack = () => {
               </div>
             </div>
 
-            {/* Preferências */}
             <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
               <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-3 sm:mb-4">Preferências</h3>
               <div className="flex justify-between items-center">
@@ -1222,13 +1335,11 @@ const FinTrack = () => {
         )}
       </div>
 
-      {/* Modal nova transação */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-2xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl`}>
             <h2 className="text-xl font-bold mb-4">Nova Transação</h2>
 
-            {/* Tipo - Entrada/Dívida */}
             <div className="flex gap-2 mb-5">
               <button
                 onClick={() => setTransactionType('entrada')}
@@ -1255,7 +1366,6 @@ const FinTrack = () => {
             </div>
 
             <div className="space-y-4">
-              {/* Valor */}
               <div>
                 <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
                   Valor <span className="text-red-500">*</span>
@@ -1277,7 +1387,6 @@ const FinTrack = () => {
                 <p className="text-xs text-gray-500 mt-1.5">Use vírgula ou ponto para decimais</p>
               </div>
 
-              {/* Data */}
               <div>
                 <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
                   Data <span className="text-red-500">*</span>
@@ -1293,7 +1402,6 @@ const FinTrack = () => {
                 />
               </div>
 
-              {/* Categoria */}
               <div>
                 <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
                   Categoria <span className="text-red-500">*</span>
@@ -1311,7 +1419,25 @@ const FinTrack = () => {
                 </select>
               </div>
 
-              {/* Descrição */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 flex items-center gap-2">
+                  <CreditCard size={16} />
+                  Forma de Pagamento <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.paymentMethod}
+                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
+                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
+                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
+                    } focus:outline-none`}
+                >
+                  {Object.entries(paymentMethods).map(([key, method]) => (
+                    <option key={key} value={key}>{method.icon} {method.label}</option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
                   Descrição <span className="text-red-500">*</span>
@@ -1328,7 +1454,6 @@ const FinTrack = () => {
                 />
               </div>
 
-              {/* Status */}
               <div>
                 <label className="block text-sm font-semibold mb-2">Status</label>
                 {transactionType === 'divida' ? (
@@ -1358,7 +1483,6 @@ const FinTrack = () => {
                 )}
               </div>
 
-              {/* Parcelas */}
               <div>
                 <label className="block text-sm font-semibold mb-2">Número de parcelas</label>
                 <input
@@ -1374,7 +1498,6 @@ const FinTrack = () => {
                 />
               </div>
 
-              {/* Recorrente */}
               <label className={`flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'
                 }`}>
                 <input
@@ -1386,7 +1509,6 @@ const FinTrack = () => {
                 <span className="font-medium">Transação recorrente</span>
               </label>
 
-              {/* Botões */}
               <div className="flex gap-3 pt-3">
                 <button
                   onClick={() => setShowModal(false)}
@@ -1409,49 +1531,8 @@ const FinTrack = () => {
         </div>
       )}
 
-      {/* Modal compartilhar */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`${cardClass} rounded-2xl p-6 max-w-md w-full shadow-2xl`}>
-            <h2 className="text-2xl font-bold mb-4">Compartilhar com usuário</h2>
-            <div className="space-y-4">
-              <input
-                type="email"
-                value={shareEmail}
-                onChange={(e) => setShareEmail(e.target.value)}
-                className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-                placeholder="Email do usuário"
-              />
-              <div className="flex gap-2">
-                <button onClick={() => setShowShareModal(false)} className={`flex-1 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'}`}>Cancelar</button>
-                <button onClick={handleShareWithUser} className="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">Compartilhar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <FilteredListModal />
 
-      {/* Modal categoria */}
-      {showCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`${cardClass} rounded-2xl p-6 max-w-md w-full shadow-2xl`}>
-            <h2 className="text-2xl font-bold mb-4">Nova Categoria</h2>
-            <div className="space-y-4">
-              <input type="text" value={newCategory.name} onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Nome da categoria" />
-              <select value={newCategory.type} onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value })} className={`w-full p-3 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
-                <option value="entrada">Entrada</option>
-                <option value="divida">Despesa</option>
-              </select>
-              <div className="flex gap-2">
-                <button onClick={() => setShowCategoryModal(false)} className={`flex-1 py-3 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'}`}>Cancelar</button>
-                <button onClick={handleAddCategory} className="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 font-medium transition-colors">Adicionar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bottom navigation */}
       <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg border-t backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-7xl mx-auto flex justify-around items-center p-2 sm:p-3 lg:p-4">
           <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-0.5 sm:gap-1 transition-colors ${activeTab === 'dashboard' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>

@@ -45,6 +45,29 @@ const FinTrack = () => {
   const [newCategory, setNewCategory] = useState({ name: '', type: 'divida' });
   const [expandedGroups, setExpandedGroups] = useState({});
   const [editingTransaction, setEditingTransaction] = useState(null);
+  const [toasts, setToasts] = useState([]);
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null });
+
+  const showToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3500);
+  };
+
+  const showConfirm = (message, onConfirm) => {
+    setConfirmModal({ show: true, message, onConfirm });
+  };
+
+  const handleConfirm = () => {
+    if (confirmModal.onConfirm) confirmModal.onConfirm();
+    setConfirmModal({ show: false, message: '', onConfirm: null });
+  };
+
+  const handleCancelConfirm = () => {
+    setConfirmModal({ show: false, message: '', onConfirm: null });
+  };
 
   const paymentMethods = {
     'pix': { label: 'PIX', color: 'bg-teal-500' },
@@ -157,7 +180,7 @@ const FinTrack = () => {
       await setDoc(transactionRef, transaction);
     } catch (error) {
       console.error('Erro ao salvar transação:', error);
-      alert('Erro ao salvar transação. Tente novamente.');
+      showToast('Erro ao salvar transação. Tente novamente.', 'error');
     }
   };
 
@@ -173,28 +196,28 @@ const FinTrack = () => {
 
   const handleShareWithUser = async () => {
     if (!shareEmail.trim()) {
-      alert('Digite um email válido');
+      showToast('Digite um email válido', 'error');
       return;
     }
     if (shareEmail === currentUser.email) {
-      alert('Você não pode compartilhar com você mesmo!');
+      showToast('Você não pode compartilhar com você mesmo!', 'error');
       return;
     }
     if (sharedUsers.includes(shareEmail)) {
-      alert('Este usuário já tem acesso');
+      showToast('Este usuário já tem acesso', 'error');
       return;
     }
     const updatedUsers = [...sharedUsers, shareEmail];
     setSharedUsers(updatedUsers);
     setShareEmail('');
     setShowShareModal(false);
-    alert(`Acesso compartilhado com ${shareEmail}!`);
+    showToast(`Acesso compartilhado com ${shareEmail}!`, 'success');
   };
 
   const handleRemoveSharedUser = (email) => {
-    if (window.confirm(`Remover acesso de ${email}?`)) {
+    showConfirm(`Remover acesso de ${email}?`, () => {
       setSharedUsers(sharedUsers.filter(u => u !== email));
-    }
+    });
   };
 
   useEffect(() => {
@@ -367,7 +390,7 @@ const FinTrack = () => {
     if (!descricao) camposVazios.push('Descrição');
 
     if (camposVazios.length > 0) {
-      alert(`❌ Campos obrigatórios não preenchidos:\n\n${camposVazios.map(c => `• ${c}`).join('\n')}`);
+      showToast(`Campos obrigatórios: ${camposVazios.join(', ')}`, 'error');
       return;
     }
 
@@ -387,7 +410,7 @@ const FinTrack = () => {
           updatedAt: new Date().toISOString()
         };
         await saveTransaction(updatedTransaction);
-        alert('✅ Transação atualizada com sucesso!');
+        showToast('Transação atualizada com sucesso!', 'success');
         closeModal();
         return;
       }
@@ -418,7 +441,7 @@ const FinTrack = () => {
 
           await saveTransaction(transaction);
         }
-        alert(`✅ ${formData.installments} parcelas adicionadas com sucesso!`);
+        showToast(`${formData.installments} parcelas adicionadas com sucesso!`, 'success');
       } else {
         const transaction = {
           id: `${Date.now()}-${Math.random()}`,
@@ -434,20 +457,20 @@ const FinTrack = () => {
         };
 
         await saveTransaction(transaction);
-        alert('✅ Transação adicionada com sucesso!');
+        showToast('Transação adicionada com sucesso!', 'success');
       }
 
       closeModal();
 
     } catch (error) {
       console.error('❌ Erro ao salvar:', error);
-      alert('❌ Erro ao salvar a transação. Verifique o console.');
+      showToast('Erro ao salvar a transação. Tente novamente.', 'error');
     }
   };
 
   const handleAddCategory = () => {
     if (!newCategory.name.trim()) {
-      alert('Digite o nome da categoria');
+      showToast('Digite o nome da categoria', 'error');
       return;
     }
     setCustomCategories(prev => ({
@@ -459,12 +482,12 @@ const FinTrack = () => {
   };
 
   const handleDeleteCategory = (type, categoryName) => {
-    if (window.confirm(`Tem certeza que deseja excluir a categoria "${categoryName}"?`)) {
+    showConfirm(`Excluir a categoria "${categoryName}"?`, () => {
       setCustomCategories(prev => ({
         ...prev,
         [type]: prev[type].filter(c => c !== categoryName)
       }));
-    }
+    });
   };
 
   const toggleStatus = async (id) => {
@@ -487,9 +510,9 @@ const FinTrack = () => {
   };
 
   const deleteTransaction = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
+    showConfirm('Excluir esta transação?', async () => {
       await deleteTransactionFromFirestore(id);
-    }
+    });
   };
 
   const toggleGroupExpansion = (groupName) => {
@@ -622,7 +645,7 @@ const FinTrack = () => {
     reader.onload = async (e) => {
       try {
         const backup = JSON.parse(e.target.result);
-        if (window.confirm('Isso irá substituir todos os seus dados atuais. Deseja continuar?')) {
+        showConfirm('Isso irá substituir todos os seus dados atuais. Deseja continuar?', async () => {
           for (const transaction of backup.transactions) {
             await saveTransaction(transaction);
           }
@@ -630,10 +653,10 @@ const FinTrack = () => {
           setCustomCategories(backup.customCategories || { entrada: [], divida: [] });
           setCurrency(backup.currency || 'BRL');
           if (backup.sharedUsers) setSharedUsers(backup.sharedUsers);
-          alert('Backup importado com sucesso!');
-        }
+          showToast('Backup importado com sucesso!', 'success');
+        });
       } catch (error) {
-        alert('Erro ao importar backup. Verifique se o arquivo está correto.');
+        showToast('Erro ao importar backup. Verifique o arquivo.', 'error');
       }
     };
     reader.readAsText(file);
@@ -762,6 +785,57 @@ const FinTrack = () => {
               })}
             </div>
           )}
+        </div>
+      </div>
+    );
+  };
+
+  // Componente Toast
+  const ToastContainer = () => (
+    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+      {toasts.map(toast => (
+        <div
+          key={toast.id}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl text-white text-sm font-medium max-w-xs pointer-events-auto animate-pulse-once
+            ${toast.type === 'success' ? 'bg-green-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'}`}
+          style={{ animation: 'slideIn 0.3s ease' }}
+        >
+          <span className="text-lg">
+            {toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ'}
+          </span>
+          <span>{toast.message}</span>
+          <button
+            onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+            className="ml-auto opacity-70 hover:opacity-100"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
+  // Modal de confirmação
+  const ConfirmModal = () => {
+    if (!confirmModal.show) return null;
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[90] p-4">
+        <div className={`${cardClass} rounded-2xl p-6 w-full max-w-sm shadow-2xl`}>
+          <p className="text-base font-semibold mb-6 text-center">{confirmModal.message}</p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleCancelConfirm}
+              className={`flex-1 py-3 rounded-xl font-semibold transition-all ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConfirm}
+              className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition-all"
+            >
+              Confirmar
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1586,6 +1660,9 @@ const FinTrack = () => {
       )}
 
       <FilteredListModal />
+
+      <ToastContainer />
+      <ConfirmModal />
 
       {/* Barra de navegação */}
       <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg border-t backdrop-blur-sm bg-opacity-95`}>

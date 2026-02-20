@@ -36,6 +36,7 @@ const FinTrack = () => {
     date: '',
     category: '',
     description: '',
+    notes: '',
     status: 'pendente',
     recurrent: false,
     installments: 1,
@@ -359,6 +360,7 @@ const FinTrack = () => {
       date: transaction.date,
       category: transaction.category,
       description: transaction.description,
+      notes: transaction.notes || '',
       status: transaction.status,
       recurrent: transaction.recurrent || false,
       installments: 1,
@@ -371,7 +373,7 @@ const FinTrack = () => {
     setShowModal(false);
     setEditingTransaction(null);
     setFormData({
-      value: '', date: '', category: '', description: '',
+      value: '', date: '', category: '', description: '', notes: '',
       status: 'pendente', recurrent: false, installments: 1, paymentMethod: 'pix'
     });
   };
@@ -404,6 +406,7 @@ const FinTrack = () => {
           date: data,
           category: categoria,
           description: descricao,
+          notes: formData.notes || '',
           status: formData.status,
           recurrent: formData.recurrent,
           paymentMethod: formData.paymentMethod,
@@ -450,6 +453,7 @@ const FinTrack = () => {
           date: data,
           category: categoria,
           description: descricao,
+          notes: formData.notes || '',
           status: formData.status,
           recurrent: formData.recurrent,
           paymentMethod: formData.paymentMethod,
@@ -1446,158 +1450,247 @@ const FinTrack = () => {
       </div>
 
       {/* Modal Nova/Editar Transação */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`${cardClass} rounded-2xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl`}>
-            <h2 className="text-xl font-bold mb-4">
-              {editingTransaction ? 'Editar Transação' : 'Nova Transação'}
-            </h2>
+      {showModal && (() => {
+        const modalStep = !formData.value || !formData.date ? 1 : !formData.category || !formData.description ? 2 : 3;
+        const progress = modalStep === 1 ? 33 : modalStep === 2 ? 66 : 100;
+        const accentColor = transactionType === 'entrada' ? 'green' : 'red';
+        const valueNum = parseFloat(formData.value?.replace(',', '.')) || 0;
 
-            <div className="flex gap-2 mb-5">
-              <button
-                onClick={() => setTransactionType('entrada')}
-                className={`flex-1 py-3 rounded-xl font-semibold transition-all ${transactionType === 'entrada'
-                  ? 'bg-green-500 text-white shadow-md'
-                  : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                Entrada
-              </button>
-              <button
-                onClick={() => setTransactionType('divida')}
-                className={`flex-1 py-3 rounded-xl font-semibold transition-all ${transactionType === 'divida'
-                  ? 'bg-red-500 text-white shadow-md'
-                  : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                Saída
-              </button>
-            </div>
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+            <div className={`${cardClass} rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[95vh] overflow-y-auto shadow-2xl`}>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2">Valor <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={formData.value}
-                  onChange={(e) => setFormData({ ...formData, value: handleValueChange(e.target.value) })}
-                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
-                  placeholder="0,00 ou 0.00"
-                />
+              {/* Header */}
+              <div className={`p-5 pb-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">
+                    {editingTransaction ? 'Editar Transação' : 'Nova Transação'}
+                  </h2>
+                  <button onClick={closeModal} className={`p-2 rounded-xl transition-colors ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Tipo: Entrada ou Saída */}
+                <div className={`flex gap-2 p-1 rounded-2xl ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <button
+                    onClick={() => setTransactionType('entrada')}
+                    className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all ${transactionType === 'entrada'
+                      ? 'bg-green-500 text-white shadow-md'
+                      : darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Entrada
+                  </button>
+                  <button
+                    onClick={() => setTransactionType('divida')}
+                    className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all ${transactionType === 'divida'
+                      ? 'bg-red-500 text-white shadow-md'
+                      : darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Saída
+                  </button>
+                </div>
+
+                {/* Barra de progresso */}
+                <div className="mt-4">
+                  <div className={`w-full h-1.5 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-500 ${transactionType === 'entrada' ? 'bg-green-500' : 'bg-red-500'}`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-1.5">
+                    {['Valor e Data', 'Categoria', 'Detalhes'].map((step, i) => (
+                      <span key={i} className={`text-[10px] font-medium ${modalStep > i ? (transactionType === 'entrada' ? 'text-green-500' : 'text-red-500') : textClass}`}>
+                        {step}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold mb-2">Data <span className="text-red-500">*</span></label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
-                />
-              </div>
+              <div className="p-5 space-y-5">
 
-              <div>
-                <label className="block text-sm font-semibold mb-2">Categoria <span className="text-red-500">*</span></label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
-                >
-                  <option value="">Selecione a categoria</option>
-                  {categories[transactionType].map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2 flex items-center gap-2">
-                  <CreditCard size={16} /> Forma de Pagamento <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.paymentMethod}
-                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
-                >
-                  {Object.entries(paymentMethods).map(([key, method]) => (
-                    <option key={key} value={key}>{method.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2">Descrição <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
-                  placeholder="Ex: Salário de outubro"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
-                >
-                  {transactionType === 'divida' ? (
-                    <>
-                      <option value="pendente">Pendente</option>
-                      <option value="paga">Paga</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="pendente">Pendente</option>
-                      <option value="recebido">Recebido</option>
-                    </>
+                {/* Preview do valor */}
+                <div className={`rounded-2xl p-4 text-center ${transactionType === 'entrada'
+                  ? darkMode ? 'bg-green-900/30 border border-green-800' : 'bg-green-50 border border-green-100'
+                  : darkMode ? 'bg-red-900/30 border border-red-800' : 'bg-red-50 border border-red-100'}`}>
+                  <p className={`text-xs font-medium mb-1 ${textClass}`}>
+                    {transactionType === 'entrada' ? 'Valor a receber' : 'Valor a pagar'}
+                  </p>
+                  <p className={`text-3xl font-bold ${transactionType === 'entrada' ? 'text-green-500' : 'text-red-500'}`}>
+                    {valueNum > 0 ? `${currencySymbols[currency]} ${valueNum.toFixed(2).replace('.', ',')}` : `${currencySymbols[currency]} 0,00`}
+                  </p>
+                  {formData.installments > 1 && valueNum > 0 && (
+                    <p className={`text-xs mt-1 ${textClass}`}>
+                      {formData.installments}x de {currencySymbols[currency]} {(valueNum / formData.installments).toFixed(2).replace('.', ',')}
+                    </p>
                   )}
-                </select>
-              </div>
+                </div>
 
-              {!editingTransaction && (
+                {/* Linha: Valor + Data */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1.5 ${textClass}`}>Valor <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={formData.value}
+                      onChange={(e) => setFormData({ ...formData, value: handleValueChange(e.target.value) })}
+                      className={`w-full p-3 rounded-xl font-medium border-2 text-sm transition-all ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1.5 ${textClass}`}>Data <span className="text-red-500">*</span></label>
+                    <input
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      className={`w-full p-3 rounded-xl font-medium border-2 text-sm transition-all ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
+                    />
+                  </div>
+                </div>
+
+                {/* Seleção visual de categoria */}
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Número de parcelas</label>
+                  <label className={`block text-xs font-semibold mb-2 ${textClass}`}>Categoria <span className="text-red-500">*</span></label>
+                  <div className="flex flex-wrap gap-2">
+                    {categories[transactionType].map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setFormData({ ...formData, category: cat })}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border-2 ${formData.category === cat
+                          ? transactionType === 'entrada'
+                            ? 'bg-green-500 text-white border-green-500'
+                            : 'bg-red-500 text-white border-red-500'
+                          : darkMode
+                            ? 'bg-gray-700 text-gray-300 border-gray-600 hover:border-gray-400'
+                            : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400'}`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Forma de pagamento visual */}
+                <div>
+                  <label className={`block text-xs font-semibold mb-2 ${textClass}`}>Forma de pagamento <span className="text-red-500">*</span></label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {Object.entries(paymentMethods).map(([key, method]) => (
+                      <button
+                        key={key}
+                        onClick={() => setFormData({ ...formData, paymentMethod: key })}
+                        className={`py-2 px-2 rounded-xl text-xs font-semibold transition-all border-2 ${formData.paymentMethod === key
+                          ? `${method.color} text-white border-transparent`
+                          : darkMode
+                            ? 'bg-gray-700 text-gray-300 border-gray-600 hover:border-gray-400'
+                            : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400'}`}
+                      >
+                        {method.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Descrição */}
+                <div>
+                  <label className={`block text-xs font-semibold mb-1.5 ${textClass}`}>Descrição <span className="text-red-500">*</span></label>
                   <input
-                    type="number"
-                    min="1"
-                    value={formData.installments}
-                    onChange={(e) => setFormData({ ...formData, installments: e.target.value })}
-                    className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
-                    placeholder="1"
+                    type="text"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className={`w-full p-3 rounded-xl font-medium border-2 text-sm transition-all ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
+                    placeholder="Ex: Salário de outubro"
                   />
                 </div>
-              )}
 
-              <label className={`flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'}`}>
-                <input
-                  type="checkbox"
-                  checked={formData.recurrent}
-                  onChange={(e) => setFormData({ ...formData, recurrent: e.target.checked })}
-                  className="w-5 h-5 accent-green-500 cursor-pointer"
-                />
-                <span className="font-medium">Transação recorrente</span>
-              </label>
+                {/* Observações */}
+                <div>
+                  <label className={`block text-xs font-semibold mb-1.5 ${textClass}`}>Observações <span className={`font-normal ${textClass}`}>(opcional)</span></label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={2}
+                    className={`w-full p-3 rounded-xl font-medium border-2 text-sm transition-all resize-none ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
+                    placeholder="Algum detalhe adicional..."
+                  />
+                </div>
 
-              <div className="flex gap-3 pt-3">
-                <button
-                  onClick={closeModal}
-                  className={`flex-1 py-3.5 rounded-xl font-semibold transition-all ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="flex-1 py-3.5 rounded-xl font-semibold bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg transition-all"
-                >
-                  {editingTransaction ? 'Atualizar' : 'Salvar'}
-                </button>
+                {/* Linha: Status + Parcelas */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1.5 ${textClass}`}>Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className={`w-full p-3 rounded-xl font-medium border-2 text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'} focus:outline-none`}
+                    >
+                      {transactionType === 'divida' ? (
+                        <>
+                          <option value="pendente">Pendente</option>
+                          <option value="paga">Paga</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="pendente">Pendente</option>
+                          <option value="recebido">Recebido</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                  {!editingTransaction && (
+                    <div>
+                      <label className={`block text-xs font-semibold mb-1.5 ${textClass}`}>Parcelas</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.installments}
+                        onChange={(e) => setFormData({ ...formData, installments: e.target.value })}
+                        className={`w-full p-3 rounded-xl font-medium border-2 text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'} focus:outline-none`}
+                        placeholder="1"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Recorrente toggle */}
+                <label className={`flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                  <input
+                    type="checkbox"
+                    checked={formData.recurrent}
+                    onChange={(e) => setFormData({ ...formData, recurrent: e.target.checked })}
+                    className="w-5 h-5 accent-green-500 cursor-pointer"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold">Transação recorrente</p>
+                    <p className={`text-xs ${textClass}`}>Repete todo mês na mesma data</p>
+                  </div>
+                </label>
+
+                {/* Botões */}
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={closeModal}
+                    className={`flex-1 py-3.5 rounded-xl font-semibold text-sm transition-all ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    className={`flex-1 py-3.5 rounded-xl font-semibold text-sm text-white shadow-md hover:shadow-lg transition-all ${transactionType === 'entrada'
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                      : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'}`}
+                  >
+                    {editingTransaction ? 'Atualizar' : 'Salvar'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Modal de Categoria */}
       {showCategoryModal && (

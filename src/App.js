@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Home, PlusCircle, BarChart3, Settings, TrendingUp, TrendingDown, DollarSign, Download, Moon, Sun, Target, Trash2, LogOut, User, Bell, Calendar, Upload, FileText, Plus, X, Users, Share2, UserPlus, Clock, Check, CreditCard, Filter, ArrowLeft } from 'lucide-react';
+import { Home, PlusCircle, BarChart3, Settings, TrendingUp, TrendingDown, DollarSign, Download, Moon, Sun, Target, Trash2, LogOut, User, Bell, Calendar, Upload, FileText, Plus, X, Users, Share2, UserPlus, Clock, Check, CreditCard, Filter, ArrowLeft, Pencil } from 'lucide-react';
 import Auth from './Auth';
 import { format, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,8 +44,8 @@ const FinTrack = () => {
 
   const [newCategory, setNewCategory] = useState({ name: '', type: 'divida' });
   const [expandedGroups, setExpandedGroups] = useState({});
+  const [editingTransaction, setEditingTransaction] = useState(null);
 
-  // Formas de pagamento disponíveis
   const paymentMethods = {
     'pix': { label: 'PIX', color: 'bg-teal-500' },
     'cartao-credito': { label: 'Cartão de Crédito', color: 'bg-purple-500' },
@@ -79,13 +79,6 @@ const FinTrack = () => {
   };
 
   const COLORS = ['#6b7280', '#4b5563', '#374151', '#9ca3af', '#1f2937', '#d1d5db', '#111827', '#e5e7eb'];
-  const CHART_COLORS = {
-    entrada: '#10b981',
-    divida: '#ef4444',
-    pendente: '#f59e0b',
-    paga: '#6b7280',
-    saldo: '#3b82f6'
-  };
   const currencySymbols = { BRL: 'R$', USD: '$', EUR: '€', GBP: '£' };
 
   useEffect(() => {
@@ -335,6 +328,31 @@ const FinTrack = () => {
     return transactions.filter(t => !t.deleted && t.type === 'divida' && t.status === 'pendente').sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
   };
 
+  const openEditModal = (transaction) => {
+    setEditingTransaction(transaction);
+    setTransactionType(transaction.type);
+    setFormData({
+      value: transaction.value.toString(),
+      date: transaction.date,
+      category: transaction.category,
+      description: transaction.description,
+      status: transaction.status,
+      recurrent: transaction.recurrent || false,
+      installments: 1,
+      paymentMethod: transaction.paymentMethod || 'pix'
+    });
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingTransaction(null);
+    setFormData({
+      value: '', date: '', category: '', description: '',
+      status: 'pendente', recurrent: false, installments: 1, paymentMethod: 'pix'
+    });
+  };
+
   const handleSubmit = async () => {
     const valorFormatado = formData.value?.toString().replace(',', '.').trim();
     const valorNumerico = parseFloat(valorFormatado);
@@ -354,6 +372,26 @@ const FinTrack = () => {
     }
 
     try {
+      // Se estiver editando uma transação existente
+      if (editingTransaction) {
+        const updatedTransaction = {
+          ...editingTransaction,
+          type: transactionType,
+          value: valorNumerico,
+          date: data,
+          category: categoria,
+          description: descricao,
+          status: formData.status,
+          recurrent: formData.recurrent,
+          paymentMethod: formData.paymentMethod,
+          updatedAt: new Date().toISOString()
+        };
+        await saveTransaction(updatedTransaction);
+        alert('✅ Transação atualizada com sucesso!');
+        closeModal();
+        return;
+      }
+
       if (formData.installments > 1) {
         const installmentValue = valorNumerico / parseInt(formData.installments);
 
@@ -399,17 +437,7 @@ const FinTrack = () => {
         alert('✅ Transação adicionada com sucesso!');
       }
 
-      setShowModal(false);
-      setFormData({
-        value: '',
-        date: '',
-        category: '',
-        description: '',
-        status: 'pendente',
-        recurrent: false,
-        installments: 1,
-        paymentMethod: 'pix'
-      });
+      closeModal();
 
     } catch (error) {
       console.error('❌ Erro ao salvar:', error);
@@ -538,14 +566,14 @@ const FinTrack = () => {
       </head>
       <body>
         <div class="header">
-          <h1>💰 FinTrack - Relatório Financeiro</h1>
+          <h1>FinTrack - Relatório Financeiro</h1>
         </div>
         <div class="info">
           <p><strong>Usuário:</strong> ${currentUser.email}</p>
           <p><strong>Data do Relatório:</strong> ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
         </div>
         <div class="summary">
-          <h2>📊 Resumo Financeiro</h2>
+          <h2>Resumo Financeiro</h2>
           <div class="summary-item">
             <span><strong>Entradas Recebidas:</strong></span>
             <span class="entrada">${formatCurrency(totals.entradas)}</span>
@@ -685,15 +713,14 @@ const FinTrack = () => {
           ) : (
             <div className="space-y-3">
               {listTransactions.map(t => {
-                const payment = paymentMethods[t.paymentMethod] || { label: 'N/A', icon: '💳', color: 'bg-gray-500' };
+                const payment = paymentMethods[t.paymentMethod] || { label: 'N/A', color: 'bg-gray-500' };
                 return (
                   <div key={t.id} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-lg truncate">{t.description}</p>
                         <div className="flex items-center gap-2 flex-wrap text-sm mt-1">
-                          <span className={`${payment.color} text-white px-2 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1`}>
-                            <span>{payment.icon}</span>
+                          <span className={`${payment.color} text-white px-2 py-0.5 rounded-full text-xs font-semibold`}>
                             {payment.label}
                           </span>
                           <span className={textClass}>{t.category}</span>
@@ -718,9 +745,14 @@ const FinTrack = () => {
                         {t.status === 'paga' ? '✓ Paga' : t.status === 'recebido' ? '✓ Recebido' : '⏱ Pendente'}
                       </button>
                       <button
+                        onClick={() => { setShowFilteredList(null); openEditModal(t); }}
+                        className={`px-3 py-2 rounded-lg transition-colors ${darkMode ? 'bg-blue-900 text-blue-200 hover:bg-blue-800' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
                         onClick={() => deleteTransaction(t.id)}
-                        className={`px-3 py-2 rounded-lg transition-colors ${darkMode ? 'bg-red-900 text-red-200 hover:bg-red-800' : 'bg-red-100 text-red-600 hover:bg-red-200'
-                          }`}
+                        className={`px-3 py-2 rounded-lg transition-colors ${darkMode ? 'bg-red-900 text-red-200 hover:bg-red-800' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -750,7 +782,6 @@ const FinTrack = () => {
     return <Auth onLogin={(user) => setCurrentUser(user)} />;
   }
 
-  const totals = calculateTotals();
   const filteredTotals = calculateTotals(true);
   const expensesByCategory = getExpensesByCategory();
   const incomeByCategory = getIncomeByCategory();
@@ -780,7 +811,7 @@ const FinTrack = () => {
               </button>
               {showNotifications && notifications.length > 0 && (
                 <div className={`absolute right-0 mt-2 w-[280px] sm:w-72 lg:w-80 ${cardClass} rounded-xl shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-96 overflow-y-auto`}>
-                  <h3 className="font-bold mb-2 sm:mb-3 text-base sm:text-lg">🔔 Notificações</h3>
+                  <h3 className="font-bold mb-2 sm:mb-3 text-base sm:text-lg">Notificações</h3>
                   {notifications.map(n => (
                     <div key={n.id} className={`p-2 sm:p-3 mb-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                       <p className="text-xs sm:text-sm">{n.message}</p>
@@ -831,7 +862,7 @@ const FinTrack = () => {
                     >
                       <option value="todas">Todas</option>
                       {Object.entries(paymentMethods).map(([key, method]) => (
-                        <option key={key} value={key}>{method.icon} {method.label}</option>
+                        <option key={key} value={key}>{method.label}</option>
                       ))}
                     </select>
                   </div>
@@ -917,9 +948,9 @@ const FinTrack = () => {
               <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
                 <h2 className="text-sm sm:text-base lg:text-xl font-bold mb-3 sm:mb-4">Despesas por Categoria</h2>
                 {expensesByCategory.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
+                  <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
-                      <Pie data={expensesByCategory} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={60} className="sm:outerRadius-[80]" fill="#8884d8" dataKey="value">
+                      <Pie data={expensesByCategory} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={60} fill="#8884d8" dataKey="value">
                         {expensesByCategory.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                       </Pie>
                       <Tooltip formatter={(value) => formatCurrency(value)} />
@@ -933,9 +964,9 @@ const FinTrack = () => {
               <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm`}>
                 <h2 className="text-sm sm:text-base lg:text-xl font-bold mb-3 sm:mb-4">Entradas por Categoria</h2>
                 {incomeByCategory.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
+                  <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
-                      <Pie data={incomeByCategory} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={60} className="sm:outerRadius-[80]" fill="#8884d8" dataKey="value">
+                      <Pie data={incomeByCategory} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={60} fill="#8884d8" dataKey="value">
                         {incomeByCategory.map((entry, index) => <Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b'][index % 5]} />)}
                       </Pie>
                       <Tooltip formatter={(value) => formatCurrency(value)} />
@@ -1065,15 +1096,14 @@ const FinTrack = () => {
                       const today = new Date();
                       const dueDate = new Date(t.date);
                       const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                      const payment = paymentMethods[t.paymentMethod] || { label: 'N/A', icon: '💳', color: 'bg-gray-500' };
+                      const payment = paymentMethods[t.paymentMethod] || { label: 'N/A', color: 'bg-gray-500' };
 
                       return (
                         <div key={t.id} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                           <div className="flex-1 min-w-0 w-full sm:w-auto">
                             <p className="font-semibold truncate">{t.description}</p>
                             <div className="flex items-center gap-2 flex-wrap text-sm">
-                              <span className={`${payment.color} text-white px-2 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1`}>
-                                <span>{payment.icon}</span>
+                              <span className={`${payment.color} text-white px-2 py-0.5 rounded-full text-xs font-semibold`}>
                                 {payment.label}
                               </span>
                               <p className={textClass}>{t.category}</p>
@@ -1103,9 +1133,14 @@ const FinTrack = () => {
                                 {t.status === 'paga' ? '✓ Paga' : t.status === 'recebido' ? '✓ Recebido' : '⏱ Pendente'}
                               </button>
                             </div>
-                            <button onClick={() => deleteTransaction(t.id)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'bg-red-900 text-red-200 hover:bg-red-800' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}>
-                              <Trash2 size={16} />
-                            </button>
+                            <div className="flex gap-1">
+                              <button onClick={() => openEditModal(t)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'bg-blue-900 text-blue-200 hover:bg-blue-800' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}>
+                                <Pencil size={16} />
+                              </button>
+                              <button onClick={() => deleteTransaction(t.id)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'bg-red-900 text-red-200 hover:bg-red-800' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}>
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -1122,7 +1157,6 @@ const FinTrack = () => {
                           <div className="flex justify-between items-center p-3 cursor-pointer hover:bg-opacity-90 transition" onClick={() => toggleGroupExpansion(group.name)}>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="text-2xl">📦</span>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-bold text-lg truncate">{group.name}</p>
                                   <div className="flex items-center gap-2 flex-wrap text-sm">
@@ -1167,18 +1201,15 @@ const FinTrack = () => {
                                 const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
                                 const installmentMatch = t.description.match(/\((\d+)\/(\d+)\)/);
                                 const currentInstallment = installmentMatch ? installmentMatch[1] : '';
-                                const totalInstallments = installmentMatch ? installmentMatch[2] : '';
-                                const payment = paymentMethods[t.paymentMethod] || { label: 'N/A', icon: '💳', color: 'bg-gray-500' };
+                                const totalInst = installmentMatch ? installmentMatch[2] : '';
+                                const payment = paymentMethods[t.paymentMethod] || { label: 'N/A', color: 'bg-gray-500' };
 
                                 return (
                                   <div key={t.id} className={`flex justify-between items-center gap-2 p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} border ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 flex-wrap text-sm">
                                         <span className={`text-xs px-2 py-1 rounded font-bold ${darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-300 text-gray-700'}`}>
-                                          {currentInstallment}/{totalInstallments}
-                                        </span>
-                                        <span className={`${payment.color} text-white px-2 py-0.5 rounded-full text-xs font-semibold`}>
-                                          {payment.icon}
+                                          {currentInstallment}/{totalInst}
                                         </span>
                                         <p className={textClass}>{format(parseISO(t.date), 'dd/MM')}</p>
                                         {t.type === 'divida' && t.status === 'pendente' && daysUntil >= 0 && daysUntil <= 7 && (
@@ -1200,9 +1231,14 @@ const FinTrack = () => {
                                           {(t.status === 'paga' || t.status === 'recebido') ? '✓' : '⏱'}
                                         </button>
                                       </div>
-                                      <button onClick={() => deleteTransaction(t.id)} className={`p-1 rounded transition-colors ${darkMode ? 'bg-red-900 text-red-200 hover:bg-red-800' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}>
-                                        <Trash2 size={14} />
-                                      </button>
+                                      <div className="flex gap-1">
+                                        <button onClick={() => openEditModal(t)} className={`p-1 rounded transition-colors ${darkMode ? 'bg-blue-900 text-blue-200 hover:bg-blue-800' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}>
+                                          <Pencil size={14} />
+                                        </button>
+                                        <button onClick={() => deleteTransaction(t.id)} className={`p-1 rounded transition-colors ${darkMode ? 'bg-red-900 text-red-200 hover:bg-red-800' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}>
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
                                 );
@@ -1261,7 +1297,7 @@ const FinTrack = () => {
                         <User size={14} className={`sm:w-4 sm:h-4 ${textClass}`} />
                         <span className="text-xs sm:text-sm font-medium truncate">{email}</span>
                       </div>
-                      <button onClick={() => handleRemoveSharedUser(email)} className="ml-2 p-1.5 sm:p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-colors">
+                      <button onClick={() => handleRemoveSharedUser(email)} className="ml-2 p-1.5 sm:p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors">
                         <X size={14} className="sm:w-4 sm:h-4" />
                       </button>
                     </div>
@@ -1335,19 +1371,20 @@ const FinTrack = () => {
         )}
       </div>
 
+      {/* Modal Nova/Editar Transação */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`${cardClass} rounded-2xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl`}>
-            <h2 className="text-xl font-bold mb-4">Nova Transação</h2>
+            <h2 className="text-xl font-bold mb-4">
+              {editingTransaction ? 'Editar Transação' : 'Nova Transação'}
+            </h2>
 
             <div className="flex gap-2 mb-5">
               <button
                 onClick={() => setTransactionType('entrada')}
                 className={`flex-1 py-3 rounded-xl font-semibold transition-all ${transactionType === 'entrada'
                   ? 'bg-green-500 text-white shadow-md'
-                  : darkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 Entrada
@@ -1356,9 +1393,7 @@ const FinTrack = () => {
                 onClick={() => setTransactionType('divida')}
                 className={`flex-1 py-3 rounded-xl font-semibold transition-all ${transactionType === 'divida'
                   ? 'bg-red-500 text-white shadow-md'
-                  : darkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 Saída
@@ -1367,52 +1402,33 @@ const FinTrack = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
-                  Valor <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-semibold mb-2">Valor <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   inputMode="decimal"
                   value={formData.value}
-                  onChange={(e) => {
-                    const formatted = handleValueChange(e.target.value);
-                    setFormData({ ...formData, value: formatted });
-                  }}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
+                  onChange={(e) => setFormData({ ...formData, value: handleValueChange(e.target.value) })}
+                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
                   placeholder="0,00 ou 0.00"
                 />
-                <p className="text-xs text-gray-500 mt-1.5">Use vírgula ou ponto para decimais</p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
-                  Data <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-semibold mb-2">Data <span className="text-red-500">*</span></label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
+                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
-                  Categoria <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-semibold mb-2">Categoria <span className="text-red-500">*</span></label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
+                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
                 >
                   <option value="">Selecione a categoria</option>
                   {categories[transactionType].map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -1421,85 +1437,66 @@ const FinTrack = () => {
 
               <div>
                 <label className="block text-sm font-semibold mb-2 flex items-center gap-2">
-                  <CreditCard size={16} />
-                  Forma de Pagamento <span className="text-red-500">*</span>
+                  <CreditCard size={16} /> Forma de Pagamento <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.paymentMethod}
                   onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
+                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
                 >
                   {Object.entries(paymentMethods).map(([key, method]) => (
-                    <option key={key} value={key}>{method.icon} {method.label}</option>
+                    <option key={key} value={key}>{method.label}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2 flex items-center gap-1">
-                  Descrição <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-semibold mb-2">Descrição <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
+                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
                   placeholder="Ex: Salário de outubro"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold mb-2">Status</label>
-                {transactionType === 'divida' ? (
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                      ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                      : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                      } focus:outline-none`}
-                  >
-                    <option value="pendente">Pendente</option>
-                    <option value="paga">Paga</option>
-                  </select>
-                ) : (
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                      ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                      : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                      } focus:outline-none`}
-                  >
-                    <option value="pendente">Pendente</option>
-                    <option value="recebido">Recebido</option>
-                  </select>
-                )}
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
+                >
+                  {transactionType === 'divida' ? (
+                    <>
+                      <option value="pendente">Pendente</option>
+                      <option value="paga">Paga</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="pendente">Pendente</option>
+                      <option value="recebido">Recebido</option>
+                    </>
+                  )}
+                </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold mb-2">Número de parcelas</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.installments}
-                  onChange={(e) => setFormData({ ...formData, installments: e.target.value })}
-                  className={`w-full p-3.5 rounded-xl font-medium transition-all ${darkMode
-                    ? 'bg-gray-700 border-2 border-gray-600 text-white focus:border-green-500'
-                    : 'bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-green-500'
-                    } focus:outline-none`}
-                  placeholder="1"
-                />
-              </div>
+              {!editingTransaction && (
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Número de parcelas</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.installments}
+                    onChange={(e) => setFormData({ ...formData, installments: e.target.value })}
+                    className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
+                    placeholder="1"
+                  />
+                </div>
+              )}
 
-              <label className={`flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'
-                }`}>
+              <label className={`flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'}`}>
                 <input
                   type="checkbox"
                   checked={formData.recurrent}
@@ -1511,11 +1508,8 @@ const FinTrack = () => {
 
               <div className="flex gap-3 pt-3">
                 <button
-                  onClick={() => setShowModal(false)}
-                  className={`flex-1 py-3.5 rounded-xl font-semibold transition-all ${darkMode
-                    ? 'bg-gray-700 text-white hover:bg-gray-600'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                  onClick={closeModal}
+                  className={`flex-1 py-3.5 rounded-xl font-semibold transition-all ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                 >
                   Cancelar
                 </button>
@@ -1523,7 +1517,67 @@ const FinTrack = () => {
                   onClick={handleSubmit}
                   className="flex-1 py-3.5 rounded-xl font-semibold bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg transition-all"
                 >
-                  Salvar
+                  {editingTransaction ? 'Atualizar' : 'Salvar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Categoria */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`${cardClass} rounded-2xl p-5 w-full max-w-sm shadow-2xl`}>
+            <h2 className="text-xl font-bold mb-4">Nova Categoria</h2>
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Nome da categoria"
+                value={newCategory.name}
+                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'} focus:outline-none`}
+              />
+              <select
+                value={newCategory.type}
+                onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value })}
+                className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'} focus:outline-none`}
+              >
+                <option value="divida">Saída</option>
+                <option value="entrada">Entrada</option>
+              </select>
+              <div className="flex gap-3">
+                <button onClick={() => setShowCategoryModal(false)} className={`flex-1 py-3 rounded-xl font-semibold ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                  Cancelar
+                </button>
+                <button onClick={handleAddCategory} className="flex-1 py-3 rounded-xl font-semibold bg-green-500 text-white hover:bg-green-600">
+                  Adicionar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Compartilhar */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`${cardClass} rounded-2xl p-5 w-full max-w-sm shadow-2xl`}>
+            <h2 className="text-xl font-bold mb-4">Compartilhar com</h2>
+            <div className="space-y-4">
+              <input
+                type="email"
+                placeholder="Email do usuário"
+                value={shareEmail}
+                onChange={(e) => setShareEmail(e.target.value)}
+                className={`w-full p-3.5 rounded-xl font-medium border-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'} focus:outline-none`}
+              />
+              <div className="flex gap-3">
+                <button onClick={() => setShowShareModal(false)} className={`flex-1 py-3 rounded-xl font-semibold ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                  Cancelar
+                </button>
+                <button onClick={handleShareWithUser} className="flex-1 py-3 rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600">
+                  Compartilhar
                 </button>
               </div>
             </div>
@@ -1533,13 +1587,14 @@ const FinTrack = () => {
 
       <FilteredListModal />
 
+      {/* Barra de navegação */}
       <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg border-t backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-7xl mx-auto flex justify-around items-center p-2 sm:p-3 lg:p-4">
           <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-0.5 sm:gap-1 transition-colors ${activeTab === 'dashboard' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
             <Home size={20} className="sm:w-6 sm:h-6" />
             <span className="text-[10px] sm:text-xs font-medium">Início</span>
           </button>
-          <button onClick={() => setShowModal(true)} className="flex flex-col items-center gap-0.5 sm:gap-1 text-green-500 transform scale-100 sm:scale-110">
+          <button onClick={() => { setEditingTransaction(null); setFormData({ value: '', date: '', category: '', description: '', status: 'pendente', recurrent: false, installments: 1, paymentMethod: 'pix' }); setShowModal(true); }} className="flex flex-col items-center gap-0.5 sm:gap-1 text-green-500">
             <div className="bg-green-500 text-white rounded-full p-2 sm:p-3 shadow-lg hover:bg-green-600 transition-colors">
               <PlusCircle size={20} className="sm:w-6 sm:h-6" />
             </div>

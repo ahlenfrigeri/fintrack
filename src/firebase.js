@@ -2,20 +2,17 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Configuração do Firebase - Credenciais do seu projeto
 const firebaseConfig = {
-    apiKey: "AIzaSyD5a6kk7YKwkVdizUCyD4_bkVAkZ8802p8",
-    authDomain: "fintrack-41ad4.firebaseapp.com",
-    projectId: "fintrack-41ad4",
-    storageBucket: "fintrack-41ad4.firebasestorage.app",
-    messagingSenderId: "455417269789",
-    appId: "1:455417269789:web:6b946ecf04470b4c59c0f4"
+    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
-// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializar serviços
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 

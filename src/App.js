@@ -923,87 +923,69 @@ const FinTrack = () => {
       <div className="max-w-7xl mx-auto px-3 pt-4 pb-32 sm:px-4 sm:pb-28">
         {activeTab === 'dashboard' && (
           <div className="space-y-3 sm:space-y-4 lg:space-y-6">
-            <div className={`${cardClass} p-2.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl shadow-sm`}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Calendar size={16} className={`sm:w-5 sm:h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                  <div className="flex-1">
-                    <span className="font-semibold text-xs sm:text-sm lg:text-base block mb-1">Filtrar por mês:</span>
-                    <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`w-full p-1.5 sm:p-2 border rounded-lg text-xs sm:text-sm font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} />
-                  </div>
+            {/* Filtros compactos lado a lado */}
+            <div className={`${cardClass} px-3 py-2.5 rounded-xl shadow-sm`}>
+              <div className="flex gap-2 items-center">
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <Calendar size={14} className={darkMode ? 'text-gray-400 shrink-0' : 'text-gray-500 shrink-0'} />
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className={`flex-1 min-w-0 p-2 border rounded-lg text-xs font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
+                  />
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Filter size={16} className={`sm:w-5 sm:h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                  <div className="flex-1">
-                    <span className="font-semibold text-xs sm:text-sm lg:text-base block mb-1">Forma de pagamento:</span>
-                    <select
-                      value={paymentMethodFilter}
-                      onChange={(e) => setPaymentMethodFilter(e.target.value)}
-                      className={`w-full p-1.5 sm:p-2 border rounded-lg text-xs sm:text-sm font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-                    >
-                      <option value="todas">Todas</option>
-                      {Object.entries(paymentMethods).map(([key, method]) => (
-                        <option key={key} value={key}>{method.label}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <Filter size={14} className={darkMode ? 'text-gray-400 shrink-0' : 'text-gray-500 shrink-0'} />
+                  <select
+                    value={paymentMethodFilter}
+                    onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                    className={`flex-1 min-w-0 p-2 border rounded-lg text-xs font-medium ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
+                  >
+                    <option value="todas">Todas formas</option>
+                    {Object.entries(paymentMethods).map(([key, method]) => (
+                      <option key={key} value={key}>{method.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              <button onClick={() => openFilteredList('entradas')} className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer text-left`}>
-                <div className="flex flex-col gap-1 sm:gap-2">
-                  <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>Entradas Recebidas</p>
-                  <p className="text-sm sm:text-lg lg:text-2xl font-bold text-green-500">{formatCurrency(filteredTotals.entradas)}</p>
-                  <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
-                    <TrendingUp className="text-green-600" size={12} />
-                    <span className="text-[9px] sm:text-xs text-green-600">Clique p/ detalhes</span>
-                  </div>
-                </div>
+            {/* 4 cards principais em 2x2, saldo em linha própria */}
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => openFilteredList('entradas')} className={`${cardClass} p-3 rounded-xl shadow-sm active:scale-95 transition-all text-left`}>
+                <p className={`text-[10px] font-medium ${textClass} mb-1`}>Entradas Recebidas</p>
+                <p className="text-base font-bold text-green-500">{formatCurrency(filteredTotals.entradas)}</p>
+                <div className="flex items-center gap-1 mt-1"><TrendingUp className="text-green-600" size={11} /><span className="text-[9px] text-green-600">ver detalhes</span></div>
               </button>
-
-              <button onClick={() => openFilteredList('entradas-pendentes')} className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer text-left`}>
-                <div className="flex flex-col gap-1 sm:gap-2">
-                  <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>A Receber</p>
-                  <p className="text-sm sm:text-lg lg:text-2xl font-bold text-blue-500">{formatCurrency(filteredTotals.entradasPendentes)}</p>
-                  <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
-                    <Clock className="text-blue-600" size={12} />
-                    <span className="text-[9px] sm:text-xs text-blue-600">Clique p/ detalhes</span>
-                  </div>
-                </div>
+              <button onClick={() => openFilteredList('entradas-pendentes')} className={`${cardClass} p-3 rounded-xl shadow-sm active:scale-95 transition-all text-left`}>
+                <p className={`text-[10px] font-medium ${textClass} mb-1`}>A Receber</p>
+                <p className="text-base font-bold text-blue-500">{formatCurrency(filteredTotals.entradasPendentes)}</p>
+                <div className="flex items-center gap-1 mt-1"><Clock className="text-blue-600" size={11} /><span className="text-[9px] text-blue-600">ver detalhes</span></div>
               </button>
-
-              <button onClick={() => openFilteredList('dividas-pendentes')} className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer text-left`}>
-                <div className="flex flex-col gap-1 sm:gap-2">
-                  <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>A Pagar</p>
-                  <p className="text-sm sm:text-lg lg:text-2xl font-bold text-orange-500">{formatCurrency(filteredTotals.dividasPendentes)}</p>
-                  <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
-                    <TrendingDown className="text-orange-600" size={12} />
-                    <span className="text-[9px] sm:text-xs text-orange-600">Clique p/ detalhes</span>
-                  </div>
-                </div>
+              <button onClick={() => openFilteredList('dividas-pendentes')} className={`${cardClass} p-3 rounded-xl shadow-sm active:scale-95 transition-all text-left`}>
+                <p className={`text-[10px] font-medium ${textClass} mb-1`}>A Pagar</p>
+                <p className="text-base font-bold text-orange-500">{formatCurrency(filteredTotals.dividasPendentes)}</p>
+                <div className="flex items-center gap-1 mt-1"><TrendingDown className="text-orange-600" size={11} /><span className="text-[9px] text-orange-600">ver detalhes</span></div>
               </button>
-
-              <button onClick={() => openFilteredList('dividas-pagas')} className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer text-left`}>
-                <div className="flex flex-col gap-1 sm:gap-2">
-                  <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>Despesas Pagas</p>
-                  <p className="text-sm sm:text-lg lg:text-2xl font-bold text-purple-500">{formatCurrency(filteredTotals.dividasPagas)}</p>
-                  <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
-                    <Check className="text-purple-600" size={12} />
-                    <span className="text-[9px] sm:text-xs text-purple-600">Clique p/ detalhes</span>
-                  </div>
-                </div>
+              <button onClick={() => openFilteredList('dividas-pagas')} className={`${cardClass} p-3 rounded-xl shadow-sm active:scale-95 transition-all text-left`}>
+                <p className={`text-[10px] font-medium ${textClass} mb-1`}>Despesas Pagas</p>
+                <p className="text-base font-bold text-purple-500">{formatCurrency(filteredTotals.dividasPagas)}</p>
+                <div className="flex items-center gap-1 mt-1"><Check className="text-purple-600" size={11} /><span className="text-[9px] text-purple-600">ver detalhes</span></div>
               </button>
+            </div>
 
-              <div className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm col-span-2 sm:col-span-2 lg:col-span-1`}>
-                <div className="flex flex-col gap-1 sm:gap-2">
-                  <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>Saldo Real</p>
-                  <p className={`text-sm sm:text-lg lg:text-2xl font-bold ${filteredTotals.saldo >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-500'}`}>{formatCurrency(filteredTotals.saldo)}</p>
-                  <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
-                    <DollarSign className={filteredTotals.saldo >= 0 ? 'text-gray-600' : 'text-red-600'} size={12} />
-                    <span className={`text-[9px] sm:text-xs ${filteredTotals.saldo >= 0 ? 'text-gray-600' : 'text-red-600'}`}>Atual</span>
-                  </div>
+            {/* Saldo em linha própria com destaque */}
+            <div className={`${cardClass} p-4 rounded-xl shadow-sm`}>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className={`text-xs font-medium ${textClass} mb-0.5`}>Saldo Real do Mês</p>
+                  <p className={`text-2xl font-bold ${filteredTotals.saldo >= 0 ? 'text-gray-900' : 'text-red-500'} ${darkMode ? '!text-white' : ''}`}>
+                    {formatCurrency(filteredTotals.saldo)}
+                  </p>
+                </div>
+                <div className={`p-3 rounded-xl ${filteredTotals.saldo >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                  <DollarSign className={filteredTotals.saldo >= 0 ? 'text-green-600' : 'text-red-600'} size={24} />
                 </div>
               </div>
             </div>
@@ -1538,6 +1520,7 @@ const FinTrack = () => {
                       type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                       className={`w-full p-3 rounded-xl font-medium border-2 text-sm transition-all ${darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'} focus:outline-none`}
                     />
                   </div>

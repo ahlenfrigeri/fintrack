@@ -873,27 +873,30 @@ const FinTrack = () => {
 
   return (
     <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
-      <div className={`${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b border-gray-200'} shadow-sm p-2 sm:p-3 lg:p-4 sticky top-0 z-10 backdrop-blur-sm bg-opacity-95`}>
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3">
-            <img src="/logo.png" alt="FinTrack" className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
-            <h1 className={`text-base sm:text-lg lg:text-2xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>FinTrack</h1>
+      <div
+        className={`${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b border-gray-200'} shadow-sm sticky top-0 z-10 backdrop-blur-sm bg-opacity-95`}
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="FinTrack" className="w-8 h-8" />
+            <h1 className={`text-lg font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>FinTrack</h1>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2">
             <div className="relative">
-              <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-1.5 sm:p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
-                <Bell size={18} className={`sm:w-5 sm:h-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`} />
+              <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-2 rounded-xl transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                <Bell size={20} className={darkMode ? 'text-gray-300' : 'text-gray-600'} />
                 {notifications.length > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center font-semibold">{notifications.length}</span>
+                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-semibold">{notifications.length}</span>
                 )}
               </button>
               {showNotifications && notifications.length > 0 && (
-                <div className={`absolute right-0 mt-2 w-[280px] sm:w-72 lg:w-80 ${cardClass} rounded-xl shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-96 overflow-y-auto`}>
-                  <h3 className="font-bold mb-2 sm:mb-3 text-base sm:text-lg">Notificações</h3>
+                <div className={`absolute right-0 mt-2 w-72 ${cardClass} rounded-xl shadow-2xl p-4 max-h-[70vh] overflow-y-auto`}>
+                  <h3 className="font-bold mb-3 text-base">Notificações</h3>
                   {notifications.map(n => (
-                    <div key={n.id} className={`p-2 sm:p-3 mb-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                      <p className="text-xs sm:text-sm">{n.message}</p>
-                      <p className="text-[10px] sm:text-xs text-orange-500 font-semibold mt-1">{formatCurrency(n.value)}</p>
+                    <div key={n.id} className={`p-3 mb-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                      <p className="text-sm">{n.message}</p>
+                      <p className="text-xs text-orange-500 font-semibold mt-1">{formatCurrency(n.value)}</p>
                     </div>
                   ))}
                 </div>
@@ -905,19 +908,19 @@ const FinTrack = () => {
               <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{currentUser.email}</span>
             </div>
 
-            <button onClick={() => setDarkMode(!darkMode)} className={`p-1.5 sm:p-2 rounded-lg transition-all ${darkMode ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-              {darkMode ? <Sun size={18} className="sm:w-5 sm:h-5" /> : <Moon size={18} className="sm:w-5 sm:h-5" />}
+            <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-xl transition-all ${darkMode ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            <button onClick={handleLogout} className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-800 text-white hover:bg-gray-900'}`}>
-              <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <button onClick={handleLogout} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              <LogOut size={16} />
               <span className="hidden sm:inline">Sair</span>
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-2 sm:p-3 lg:p-4 pb-20 sm:pb-24">
+      <div className="max-w-7xl mx-auto px-3 pt-4 pb-32 sm:px-4 sm:pb-28">
         {activeTab === 'dashboard' && (
           <div className="space-y-3 sm:space-y-4 lg:space-y-6">
             <div className={`${cardClass} p-2.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl shadow-sm`}>
@@ -948,7 +951,7 @@ const FinTrack = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               <button onClick={() => openFilteredList('entradas')} className={`${cardClass} p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer text-left`}>
                 <div className="flex flex-col gap-1 sm:gap-2">
                   <p className={`text-[10px] sm:text-xs lg:text-sm font-medium ${textClass}`}>Entradas Recebidas</p>
@@ -1177,48 +1180,36 @@ const FinTrack = () => {
                       const payment = paymentMethods[t.paymentMethod] || { label: 'N/A', color: 'bg-gray-500' };
 
                       return (
-                        <div key={t.id} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                          <div className="flex-1 min-w-0 w-full sm:w-auto">
-                            <p className="font-semibold truncate">{t.description}</p>
-                            <div className="flex items-center gap-2 flex-wrap text-sm">
-                              <span className={`${payment.color} text-white px-2 py-0.5 rounded-full text-xs font-semibold`}>
-                                {payment.label}
-                              </span>
-                              <p className={textClass}>{t.category}</p>
-                              <span className={`${textClass} hidden sm:inline`}>•</span>
-                              <p className={textClass}>{format(parseISO(t.date), 'dd/MM/yyyy')}</p>
-                              {t.type === 'divida' && t.status === 'pendente' && daysUntil >= 0 && daysUntil <= 7 && (
-                                <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
-                                  {daysUntil}d
-                                </span>
-                              )}
-                              {t.type === 'divida' && t.status === 'pendente' && daysUntil < 0 && (
-                                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                                  {Math.abs(daysUntil)}d atraso
-                                </span>
-                              )}
+                        <div key={t.id} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm leading-tight truncate">{t.description}</p>
+                              <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                <span className={`${payment.color} text-white px-2 py-0.5 rounded-full text-[10px] font-bold`}>{payment.label}</span>
+                                <span className={`text-xs ${textClass}`}>{t.category}</span>
+                                <span className={`text-xs ${textClass}`}>• {format(parseISO(t.date), 'dd/MM')}</span>
+                                {t.type === 'divida' && t.status === 'pendente' && daysUntil >= 0 && daysUntil <= 7 && (
+                                  <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">{daysUntil}d</span>
+                                )}
+                                {t.type === 'divida' && t.status === 'pendente' && daysUntil < 0 && (
+                                  <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold animate-pulse">{Math.abs(daysUntil)}d atraso</span>
+                                )}
+                              </div>
                             </div>
+                            <p className={`font-bold text-sm shrink-0 ${t.type === 'entrada' ? 'text-green-500' : 'text-red-500'}`}>
+                              {t.type === 'entrada' ? '+' : '-'}{formatCurrency(t.value)}
+                            </p>
                           </div>
-                          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                            <div className="text-right">
-                              <p className={`font-bold ${t.type === 'entrada' ? 'text-green-500' : 'text-red-500'}`}>
-                                {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.value)}
-                              </p>
-                              <button onClick={() => toggleStatus(t.id)} className={`text-xs px-2 py-1 rounded-full font-semibold transition-colors ${(t.status === 'paga' || t.status === 'recebido')
-                                ? 'bg-purple-500 text-white hover:bg-purple-600'
-                                : 'bg-orange-500 text-white hover:bg-orange-600'
-                                }`}>
-                                {t.status === 'paga' ? '✓ Paga' : t.status === 'recebido' ? '✓ Recebido' : '⏱ Pendente'}
-                              </button>
-                            </div>
-                            <div className="flex gap-1">
-                              <button onClick={() => openEditModal(t)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'bg-blue-900 text-blue-200 hover:bg-blue-800' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}>
-                                <Pencil size={16} />
-                              </button>
-                              <button onClick={() => deleteTransaction(t.id)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'bg-red-900 text-red-200 hover:bg-red-800' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}>
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
+                          <div className="flex items-center gap-2 mt-2.5">
+                            <button onClick={() => toggleStatus(t.id)} className={`flex-1 text-[11px] px-2 py-1.5 rounded-lg font-semibold transition-colors ${(t.status === 'paga' || t.status === 'recebido') ? 'bg-purple-500 text-white' : 'bg-orange-500 text-white'}`}>
+                              {t.status === 'paga' ? '✓ Paga' : t.status === 'recebido' ? '✓ Recebido' : '⏱ Pendente'}
+                            </button>
+                            <button onClick={() => openEditModal(t)} className={`p-2 rounded-lg ${darkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-600'}`}>
+                              <Pencil size={14} />
+                            </button>
+                            <button onClick={() => deleteTransaction(t.id)} className={`p-2 rounded-lg ${darkMode ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-600'}`}>
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         </div>
                       );
@@ -1758,25 +1749,37 @@ const FinTrack = () => {
       <ConfirmModal />
 
       {/* Barra de navegação */}
-      <div className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg border-t backdrop-blur-sm bg-opacity-95`}>
-        <div className="max-w-7xl mx-auto flex justify-around items-center p-2 sm:p-3 lg:p-4">
-          <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-0.5 sm:gap-1 transition-colors ${activeTab === 'dashboard' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
-            <Home size={20} className="sm:w-6 sm:h-6" />
-            <span className="text-[10px] sm:text-xs font-medium">Início</span>
-          </button>
-          <button onClick={() => { setEditingTransaction(null); setFormData({ value: '', date: '', category: '', description: '', status: 'pendente', recurrent: false, installments: 1, paymentMethod: 'pix' }); setShowModal(true); }} className="flex flex-col items-center gap-0.5 sm:gap-1 text-green-500">
-            <div className="bg-green-500 text-white rounded-full p-2 sm:p-3 shadow-lg hover:bg-green-600 transition-colors">
-              <PlusCircle size={20} className="sm:w-6 sm:h-6" />
+      <div
+        className={`fixed bottom-0 left-0 right-0 ${darkMode ? 'bg-gray-800/95 border-gray-700' : 'bg-white/95 border-gray-200'} border-t backdrop-blur-md shadow-2xl`}
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="flex justify-around items-center px-2 pt-2 pb-1">
+          {[
+            { tab: 'dashboard', icon: <Home size={24} />, label: 'Início' },
+            { tab: 'relatorios', icon: <BarChart3 size={24} />, label: 'Relatórios' },
+            { tab: 'configuracoes', icon: <Settings size={24} />, label: 'Config' },
+          ].map(({ tab, icon, label }) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex flex-col items-center gap-0.5 px-5 py-1 rounded-xl transition-all active:scale-95 ${activeTab === tab
+                  ? darkMode ? 'text-white' : 'text-gray-900'
+                  : textClass
+                }`}
+            >
+              {icon}
+              <span className="text-[11px] font-semibold">{label}</span>
+              {activeTab === tab && <div className="w-4 h-0.5 rounded-full bg-green-500" />}
+            </button>
+          ))}
+          <button
+            onClick={() => { setEditingTransaction(null); setFormData({ value: '', date: '', category: '', description: '', notes: '', status: 'pendente', recurrent: false, installments: 1, paymentMethod: 'pix' }); setShowModal(true); }}
+            className="flex flex-col items-center gap-0.5 px-2 py-1 -mt-4"
+          >
+            <div className="bg-green-500 text-white rounded-2xl p-3.5 shadow-lg shadow-green-200 hover:bg-green-600 transition-all active:scale-95">
+              <Plus size={24} />
             </div>
-            <span className="text-[10px] sm:text-xs font-medium">Nova</span>
-          </button>
-          <button onClick={() => setActiveTab('relatorios')} className={`flex flex-col items-center gap-0.5 sm:gap-1 transition-colors ${activeTab === 'relatorios' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
-            <BarChart3 size={20} className="sm:w-6 sm:h-6" />
-            <span className="text-[10px] sm:text-xs font-medium">Relatórios</span>
-          </button>
-          <button onClick={() => setActiveTab('configuracoes')} className={`flex flex-col items-center gap-0.5 sm:gap-1 transition-colors ${activeTab === 'configuracoes' ? (darkMode ? 'text-gray-200' : 'text-gray-900') : textClass}`}>
-            <Settings size={20} className="sm:w-6 sm:h-6" />
-            <span className="text-[10px] sm:text-xs font-medium">Config</span>
+            <span className="text-[11px] font-semibold text-green-500 mt-0.5">Nova</span>
           </button>
         </div>
       </div>
